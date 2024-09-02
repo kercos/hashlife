@@ -5,7 +5,7 @@ from collections import Counter
 
 def baseline_life(pts):
     """
-    The baseline implementation of the Game of Life. Takes a list/set 
+    The baseline implementation of the Game of Life. Takes a list/set
     of (x,y) on cells, and returns a new set of on cells in the next
     generation.
     """
@@ -46,7 +46,7 @@ mask = (1 << 63) - 1
 def join(a, b, c, d):
     """
     Combine four children at level `k-1` to a new node at level `k`.
-    If this is cached, return the cached node. 
+    If this is cached, return the cached node.
     Otherwise, create a new node, and add it to the cache.
     """
     n = a.n + b.n + c.n + d.n
@@ -59,7 +59,7 @@ def join(a, b, c, d):
         + 4318490180473 * d.hash
     ) & mask
     return Node(a.k+1, n, nhash, a, b, c, d)
-    
+
 
 @lru_cache(maxsize=1024)
 def get_zero(k):
@@ -87,10 +87,10 @@ def life(a, b, c, d, E, f, g, h, i):
 
 def life_4x4(m):
     """
-    Return the next generation of a $k=2$ (i.e. 4x4) cell. 
-    To terminate the recursion, at the base level, 
-    if we have a $k=2$ 4x4 block, 
-    we can compute the 2x2 central successor by iterating over all 
+    Return the next generation of a $k=2$ (i.e. 4x4) cell.
+    To terminate the recursion, at the base level,
+    if we have a $k=2$ 4x4 block,
+    we can compute the 2x2 central successor by iterating over all
     the 3x3 sub-neighbourhoods of 1x1 cells using the standard Life rule.
     """
     na = life(m.a.a, m.a.b, m.b.a, m.a.c, m.a.d, m.b.c, m.c.a, m.c.b, m.d.a)  # AD
@@ -103,7 +103,7 @@ def life_4x4(m):
 @lru_cache(maxsize=2 ** 24)
 def successor(m, j=None):
     """
-    Return the 2**k-1 x 2**k-1 successor, 2**j generations in the future, 
+    Return the 2**k-1 x 2**k-1 successor, 2**j generations in the future,
     where j <= k - 2, caching the result.
     """
     if m.n == 0:  # empty
@@ -170,9 +170,9 @@ def construct(pts):
 
 
 def expand(node, x=0, y=0, clip=None, level=0):
-    """Turn a quadtree a list of (x,y,gray) triples 
-    in the rectangle (x,y) -> (clip[0], clip[1]) (if clip is not-None).    
-    If `level` is given, quadtree elements at the given level are given 
+    """Turn a quadtree a list of (x,y,gray) triples
+    in the rectangle (x,y) -> (clip[0], clip[1]) (if clip is not-None).
+    If `level` is given, quadtree elements at the given level are given
     as a grayscale level 0.0->1.0,  "zooming out" the display.
     """
 
@@ -200,7 +200,7 @@ def expand(node, x=0, y=0, clip=None, level=0):
 
 def print_node(node):
     """
-    Print out a node, fully expanded    
+    Print out a node, fully expanded
     """
     points = expand(crop(node))
     px, py = 0, 0
@@ -257,7 +257,7 @@ def pad(node):
 
 
 def ffwd(node, n):
-    """Advance as quickly as possible, taking n 
+    """Advance as quickly as possible, taking n
     giant leaps"""
     gens = 0
     for i in range(n):
@@ -285,40 +285,3 @@ def advance(node, n):
         if bit:
             node = successor(node, j)
     return crop(node)
-
-
-if __name__ == "__main__":
-    from lifeparsers import autoguess_life_file
-    import time
-
-    # run the breeder forward many generations
-    def load_lif(fname):
-        pat, comments = autoguess_life_file(fname)
-        return construct(pat)
-
-    init_t = time.perf_counter()
-    print(ffwd(load_lif("lifep/breeder.lif"), 64))
-    t = time.perf_counter() - init_t
-    print(f"Computation took {t*1000.0:.1f}ms")
-    print(successor.cache_info())
-    print(join.cache_info())
-
-    from render import render_img
-    import matplotlib.pyplot as plt
-
-    ## test the Gosper glider gun
-    pat = load_lif("lifep/gun30.LIF")
-    pat = load_lif("lifep/gun30.lif")
-    render_img(expand(pat))
-    plt.savefig("imgs/gun30_0.png", bbox_inches="tight")
-    render_img(expand(advance(centre(centre(pat)), 30)))
-    plt.savefig("imgs/gun30_30.png", bbox_inches="tight")
-
-    render_img(expand(advance(centre(centre(pat)), 120), level=0))
-    plt.savefig("imgs/gun30_120_0.png", bbox_inches="tight")
-    render_img(expand(advance(centre(centre(pat)), 120), level=1))
-    plt.savefig("imgs/gun30_120_1.png", bbox_inches="tight")
-    render_img(expand(advance(centre(centre(pat)), 120), level=2))
-    plt.savefig("imgs/gun30_120_2.png", bbox_inches="tight")
-    render_img(expand(advance(centre(centre(pat)), 120), level=3))
-    plt.savefig("imgs/gun30_120_3.png", bbox_inches="tight")

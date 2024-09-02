@@ -1,4 +1,4 @@
-from hashlife import (
+from gol.hl.hashlife import (
     join,
     successor,
     on,
@@ -15,7 +15,7 @@ from hashlife import (
     advance,
     ffwd,
 )
-from lifeparsers import autoguess_life_file
+from hl.lifeparsers import autoguess_life_file
 from itertools import product
 import os
 from functools import lru_cache
