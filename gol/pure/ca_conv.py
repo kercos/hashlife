@@ -1,5 +1,9 @@
 '''
+this code is from:
 https://gist.github.com/njbbaer/4da02e2960636d349e9bae7ae43c213c
+but see also:
+- julia: https://rivesunder.github.io/SortaSota/2021/09/27/faster_life_julia.html
+- carle: https://github.com/rivesunder/carle
 '''
 
 import time
@@ -22,15 +26,10 @@ class Automata:
     '''
     shape: must be 2d and power of 2 to make things efficient
     neighborhood: who are my neighbors (maked with 1s)
+    configuration: initial configuration
     '''
-    def __init__(self, shape, density, neighborhood, rule, seed=None):
-        self.seed = seed
-        # initialize random generator
-        rng = np.random.default_rng(self.seed)
-
-        self.board = rng.uniform(0, 1, shape)
-        self.board = self.board < density
-
+    def __init__(self, shape, board, neighborhood, rule):
+        self.board = board
         n_height, n_width = neighborhood.shape # say (3,3) for Conway's GoL
         self.kernal = np.zeros(shape) # kernal has same shape, say (256,256)
         self.kernal[
@@ -74,7 +73,7 @@ class Automata:
 
 
 class Conway(Automata):
-    def __init__(self, shape, density, seed=None):
+    def __init__(self, shape, board):
         # which neighbors are on (marked with 1s)
         neighborhood = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]])
         # GoL Rule:
@@ -83,42 +82,42 @@ class Conway(Automata):
             [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
         ]
         # init automata
-        Automata.__init__(self, shape, density, neighborhood, rule, seed)
+        Automata.__init__(self, shape, board, neighborhood, rule)
 
 
 class Life34(Automata):
-    def __init__(self, shape, density, seed=None):
+    def __init__(self, shape, board):
         neighborhood = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]])
         rule = [[3, 4], [3, 4]]
-        Automata.__init__(self, shape, density, neighborhood, rule, seed)
+        Automata.__init__(self, shape, board, neighborhood, rule)
 
 
 class Amoeba(Automata):
-    def __init__(self, shape, density, seed=None):
+    def __init__(self, shape, board):
         neighborhood = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]])
         rule = [[1, 3, 5, 8], [3, 5, 7]]
-        Automata.__init__(self, shape, density, neighborhood, rule, seed)
+        Automata.__init__(self, shape, board, neighborhood, rule)
 
 
 class Anneal(Automata):
-    def __init__(self, shape, density, seed=None):
+    def __init__(self, shape, board):
         neighborhood = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]])
         rule = [[3, 5, 6, 7, 8], [4, 6, 7, 8]]
-        Automata.__init__(self, shape, density, neighborhood, rule, seed)
+        Automata.__init__(self, shape, board, neighborhood, rule)
 
 
 class Bugs(Automata):
-    def __init__(self, shape, density, seed=None):
+    def __init__(self, shape, board):
         neighborhood = np.ones((11, 11))
         rule = [np.arange(34, 59), np.arange(34, 46)]
-        Automata.__init__(self, shape, density, neighborhood, rule, seed)
+        Automata.__init__(self, shape, board, neighborhood, rule)
 
 
 class Globe(Automata):
-    def __init__(self, shape, density, seed=None):
+    def __init__(self, shape, board):
         neighborhood = np.ones((10, 1))
         rule = [np.arange(34, 59), np.arange(34, 46)]
-        Automata.__init__(self, shape, density, neighborhood, rule, seed)
+        Automata.__init__(self, shape, board, neighborhood, rule)
 
 
 class Animation:
@@ -138,30 +137,59 @@ class Animation:
 
 
 def main():
-    # Create automata
+
+    random_init = False
+    shape_x = 256
+    shape = (shape_x, shape_x)
+
+
+    if random_init:
+        seed = 123
+        density = 0.5
+
+        # initialize random generator
+        rng = np.random.default_rng(seed)
+        board = rng.uniform(0, 1, shape)
+        board = board < density
+    else:
+        sq = 2 # alive square size in the middle of the board
+        assert sq % 2 == 0
+        board = np.zeros(shape)
+        board[
+            shape_x//2-sq//2:shape_x//2+sq//2,
+            shape_x//2-sq//2:shape_x//2+sq//2
+        ] = 1 # alive
+
+    neighborhood = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]])
+
+    # GoL Rule:
+    # automata = Conway(shape=shape,board=board)
+    # rule = [
+    #     [2, 3], # 'on->on': (2,3): "on" neighbours (can't contain 0)
+    #     [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
+    # ]
+
+    # exploring other rules:
+    rule = [
+        [2], # 'on->on': "on" neighbours (can't contain 0)
+        [1]  # 'off->on':   "on" neighbours (can't contain 0)
+    ]
+
+    # init automata
+    automata = Automata(shape, board, neighborhood, rule)
+
+    # Other automata
     # automata = Bugs((256, 256), density=0.5)
-    automata = Conway((256, 256), density=0.5)
     # automata = Life34((256, 256), density=0.12)
     # automata = Amoeba((256, 256), density=0.18)
     # automata = Anneal((256, 256), density=0.5)
 
+    # Animate automata
+    automata.animate(interval=200) #ms
+
     # Benchmark automata
     # automata.benchmark(interations=100)
 
-    # Animate automata
-    automata.animate(interval=100)
-
-def test():
-    automata = Conway((32, 32), density=0.5, seed=123)
-    automata.animate(interval=100)
-    # num_steps = 100
-    # init_t = time.perf_counter()
-    # for _ in range(num_steps):
-    #     automata.update_board()
-    # t = time.perf_counter() - init_t
-    # print(f"Computation took {t*1000.0:.1f}ms")
-
 
 if __name__ == "__main__":
-    # main()
-    test()
+    main()
