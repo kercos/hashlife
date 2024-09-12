@@ -24,45 +24,55 @@ class Automata:
         self.board = board
         self.torus = torus
         nh, nw = neighborhood.shape # say (3,3) for Conway's GoL
-        self.kernal = np.zeros(shape) # kernal has same shape of board, say (256,256)
 
+        # create the kernal (init as zero)
+        self.kernal = np.zeros(shape) # kernal has same shape of board, say (256,256)
         # put neighborhood mask in the middle (everything else is 0.)
         self.kernal[
             (shape[0] - nh - 1) // 2 : (shape[0] + nh) // 2,
             (shape[1] - nw - 1) // 2 : (shape[1] + nw) // 2
         ] = neighborhood
+
         self.kernal_ft = fft2(self.kernal) # same shape but floating numbers
 
         self.rule = rule
 
     '''
-    Main convolution operation in a single time-step
+    Main count_real operation in a single time-step
     '''
     def fft_convolve2d(self):
         board_ft = fft2(self.board) # same shape but floating numbers
 
         # inverted fft2 (complex numbers)
         inverted = ifft2(board_ft * self.kernal_ft)
-        # get the real part of the complex argument.
-        convolution = np.real(inverted)
+        # get the real part of the complex argument (real number)
+        count_real = np.real(inverted)
 
         # rolling over the boundaries (https://en.wikipedia.org/wiki/Torus)
         if self.torus:
             height, width = board_ft.shape
-            convolution = np.roll(convolution, - int(height / 2) + 1, axis=0)
-            convolution = np.roll(convolution, - int(width / 2) + 1, axis=1)
+            count_real = np.roll(count_real, - int(height / 2) + 1, axis=0)
+            count_real = np.roll(count_real, - int(width / 2) + 1, axis=1)
 
-        return convolution.round()
+        counts_int = np.rint(count_real)
+
+        # double check
+        # counts_round = count_real.round()
+        # assert np.array_equal(counts_int, counts_round)
+        # return counts_round
+
+        return counts_int
 
 
     def update_board(self, intervals=1):
         for _ in range(intervals):
-            convolution = self.fft_convolve2d()
-            shape = convolution.shape
+            # resulting of count_real - sanme shape - number of alive cells
+            count_real = self.fft_convolve2d()
+            shape = count_real.shape
             new_board = np.zeros(shape)
-            new_board[np.where(np.in1d(convolution, self.rule[0]).reshape(shape)
+            new_board[np.where(np.in1d(count_real, self.rule[0]).reshape(shape)
                                & (self.board == 1))] = 1
-            new_board[np.where(np.in1d(convolution, self.rule[1]).reshape(shape)
+            new_board[np.where(np.in1d(count_real, self.rule[1]).reshape(shape)
                                & (self.board == 0))] = 1
             self.board = new_board
 
@@ -155,18 +165,42 @@ class Animation:
 
 def test_bugs():
     density=0.5
-    seed = 123
+    seed = 16
     shape = (256, 256)
     rng = np.random.default_rng(seed)
     board = rng.uniform(0, 1, shape)
     board = board < density
     automata = Bugs(shape, board)
-    automata.animate(interval=200) #ms
+    # automata.animate(interval=200) #ms
+    automata.benchmark(interations=100)
+
+def test_torch():
+    # import timeit
+    import torch
+    print('cuda available:', torch.cuda.is_available())
+    print('mps available:', torch.backends.mps.is_available())
+    mps_device = torch.device("mps")
+    # Create a Tensor directly on the mps device
+    x = torch.ones(5, device=mps_device)
+    # x = torch.rand((10000, 10000), dtype=torch.float32)
+    # Any operation happens on the GPU
+    y = x * 2
+    print(y)
+
+    '''
+    # Move your model to mps just like any other device
+    model = YourFavoriteNet()
+    model.to(mps_device)
+
+    # Now every call runs on the GPU
+    pred = model(x)
+    '''
+
 
 def main():
 
     random_init = True
-    shape_x = 16
+    shape_x = 128
     shape = (shape_x, shape_x)
 
 
@@ -212,12 +246,14 @@ def main():
     # automata = Anneal((256, 256), density=0.5)
 
     # Animate automata
-    automata.animate(interval=200) #ms
+    # automata.animate(interval=200) #ms
 
     # Benchmark automata
-    # automata.benchmark(interations=100)
+    automata.benchmark(interations=1000)
 
 
 if __name__ == "__main__":
-    main()
     # test_bugs()
+    test_torch()
+
+    # main()
