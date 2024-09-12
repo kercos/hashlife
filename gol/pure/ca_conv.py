@@ -22,7 +22,9 @@ class Automata:
     '''
     def __init__(self, shape, board, neighborhood, rule, torus=True):
         self.board = board
+        self.height, self.width = self.shape = self.board.shape
         self.torus = torus
+
         nh, nw = neighborhood.shape # say (3,3) for Conway's GoL
 
         # create the kernal (init as zero)
@@ -50,9 +52,8 @@ class Automata:
 
         # rolling over the boundaries (https://en.wikipedia.org/wiki/Torus)
         if self.torus:
-            height, width = board_ft.shape
-            count_real = np.roll(count_real, - int(height / 2) + 1, axis=0)
-            count_real = np.roll(count_real, - int(width / 2) + 1, axis=1)
+            count_real = np.roll(count_real, - int(self.height / 2) + 1, axis=0)
+            count_real = np.roll(count_real, - int(self.width / 2) + 1, axis=1)
 
         counts_int = np.rint(count_real)
 
@@ -67,13 +68,24 @@ class Automata:
     def update_board(self, intervals=1):
         for _ in range(intervals):
             # resulting of count_real - sanme shape - number of alive cells
-            count_real = self.fft_convolve2d()
-            shape = count_real.shape
+            count_alive = self.fft_convolve2d()
+            shape = count_alive.shape
             new_board = np.zeros(shape)
-            new_board[np.where(np.in1d(count_real, self.rule[0]).reshape(shape)
-                               & (self.board == 1))] = 1
-            new_board[np.where(np.in1d(count_real, self.rule[1]).reshape(shape)
-                               & (self.board == 0))] = 1
+            new_board[
+                np.where(
+                    np.isin(count_alive, self.rule[0]).reshape(shape)
+                    &
+                    (self.board == 1)
+                )
+            ] = 1
+            new_board[
+                np.where(
+                    np.isin(count_alive, self.rule[1]).reshape(shape)
+                    &
+                    (self.board == 0)
+                )
+            ] = 1
+
             self.board = new_board
 
 
@@ -85,15 +97,25 @@ class Automata:
 
 
     def animate(self, interval=100):
+
         def update_animation(*args):
             self.update_board()
             self.image.set_array(self.board)
             return self.image,
 
         fig = pyplot.figure()
-        self.image = pyplot.imshow(self.board, interpolation="nearest",
-                                   cmap=pyplot.cm.gray)
-        ani = animation.FuncAnimation(fig, update_animation, interval=interval)
+        self.image = pyplot.imshow(
+            self.board,
+            interpolation="nearest",
+            cmap=pyplot.cm.gray
+        )
+
+        ani = animation.FuncAnimation(
+            fig,
+            update_animation,
+            interval=interval,
+            cache_frame_data=False # or save_count=MAX_FRAMES
+        )
         pyplot.show()
 
 
@@ -246,14 +268,14 @@ def main():
     # automata = Anneal((256, 256), density=0.5)
 
     # Animate automata
-    # automata.animate(interval=200) #ms
+    automata.animate(interval=200) #ms
 
     # Benchmark automata
-    automata.benchmark(interations=1000)
+    # automata.benchmark(interations=1000)
 
 
 if __name__ == "__main__":
     # test_bugs()
-    test_torch()
+    # test_torch()
 
-    # main()
+    main()
