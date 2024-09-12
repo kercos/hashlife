@@ -12,13 +12,21 @@ from numpy.fft import fft2, ifft2
 from matplotlib import pyplot, animation
 
 
-def fft_convolve2d(board, kernal):
-    board_ft = fft2(board)
+
+def fft_convolve2d(board, kernal, torus=True):
+    board_ft = fft2(board) # same shape but floating numbers
     kernal_ft = fft2(kernal)
-    height, width = board_ft.shape
-    convolution = np.real(ifft2(board_ft * kernal_ft))
-    convolution = np.roll(convolution, - int(height / 2) + 1, axis=0)
-    convolution = np.roll(convolution, - int(width / 2) + 1, axis=1)
+
+    # get the real part of the complex argument.
+    inverted = ifft2(board_ft * kernal_ft)
+    convolution = np.real(inverted)
+
+    # rolling over the boundaries (https://en.wikipedia.org/wiki/Torus)
+    if torus:
+        height, width = board_ft.shape
+        convolution = np.roll(convolution, - int(height / 2) + 1, axis=0)
+        convolution = np.roll(convolution, - int(width / 2) + 1, axis=1)
+
     return convolution.round()
 
 
@@ -30,11 +38,13 @@ class Automata:
     '''
     def __init__(self, shape, board, neighborhood, rule):
         self.board = board
-        n_height, n_width = neighborhood.shape # say (3,3) for Conway's GoL
-        self.kernal = np.zeros(shape) # kernal has same shape, say (256,256)
+        nh, nw = neighborhood.shape # say (3,3) for Conway's GoL
+        self.kernal = np.zeros(shape) # kernal has same shape of board, say (256,256)
+
+        # put neighborhood mask in the middle (everything else is 0.)
         self.kernal[
-            (shape[0] - n_height - 1) // 2 : (shape[0] + n_height) // 2,
-            (shape[1] - n_width - 1) // 2 : (shape[1] + n_width) // 2
+            (shape[0] - nh - 1) // 2 : (shape[0] + nh) // 2,
+            (shape[1] - nw - 1) // 2 : (shape[1] + nw) // 2
         ] = neighborhood
 
         self.rule = rule
@@ -109,7 +119,10 @@ class Anneal(Automata):
 class Bugs(Automata):
     def __init__(self, shape, board):
         neighborhood = np.ones((11, 11))
-        rule = [np.arange(34, 59), np.arange(34, 46)]
+        rule = [
+            np.arange(34, 59), # 'on->on': (2,3): "on" neighbours (can't contain 0)
+            np.arange(34, 46)  # 'off->on': (3,): "on" neighbours (can't contain 0)
+        ]
         Automata.__init__(self, shape, board, neighborhood, rule)
 
 
@@ -135,11 +148,20 @@ class Animation:
         self.image.set_array(self.automata.board)
         return self.image,
 
+def test_bugs():
+    density=0.5
+    seed = 123
+    shape = (256, 256)
+    rng = np.random.default_rng(seed)
+    board = rng.uniform(0, 1, shape)
+    board = board < density
+    automata = Bugs(shape, board)
+    automata.animate(interval=200) #ms
 
 def main():
 
-    random_init = False
-    shape_x = 256
+    random_init = True
+    shape_x = 16
     shape = (shape_x, shape_x)
 
 
@@ -164,16 +186,16 @@ def main():
 
     # GoL Rule:
     # automata = Conway(shape=shape,board=board)
-    # rule = [
-    #     [2, 3], # 'on->on': (2,3): "on" neighbours (can't contain 0)
-    #     [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
-    # ]
+    rule = [
+        [2, 3], # 'on->on': (2,3): "on" neighbours (can't contain 0)
+        [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
+    ]
 
     # exploring other rules:
-    rule = [
-        [2], # 'on->on': "on" neighbours (can't contain 0)
-        [1]  # 'off->on':   "on" neighbours (can't contain 0)
-    ]
+    # rule = [
+    #     [2], # 'on->on': "on" neighbours (can't contain 0)
+    #     [1]  # 'off->on':   "on" neighbours (can't contain 0)
+    # ]
 
     # init automata
     automata = Automata(shape, board, neighborhood, rule)
@@ -193,3 +215,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # test_bugs()
