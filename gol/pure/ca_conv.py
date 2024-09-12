@@ -277,12 +277,24 @@ def main_gol(
             shape_x//2-sq//2:shape_x//2+sq//2
         ] = 1 # alive
 
-    neighborhood = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]])
+    # neighborhood = np.array(
+    #     [
+    #         [1, 1, 1],
+    #         [1, 0, 1],
+    #         [1, 1, 1]
+    #     ]
+    # )
 
-    # GoL Rule:
-    # automata = Conway(shape=shape,board=board)
+    # GoL Rule (same as Conway class):
+    # rule = [
+    #     [2, 3], # 'on->on': (2,3): "on" neighbours (can't contain 0)
+    #     [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
+    # ]
+
+    # GoL Rule with neighborhood all ones:
+    neighborhood = np.ones((3,3))
     rule = [
-        [2, 3], # 'on->on': (2,3): "on" neighbours (can't contain 0)
+        [3, 4], # 'on->on': (2,3): "on" neighbours (can't contain 0)
         [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
     ]
 
@@ -310,23 +322,23 @@ if __name__ == "__main__":
     # test_bugs()
     # test_torch()
 
-    # main_gol(
-    #     random_init = True,
-    #     shape_x = 1024,
-    #     seed = 123, # only used on random_init
-    #     density = 0.5, # only used on random_init
-    #     animate = False
-    # )
+    main_gol(
+        random_init = True,
+        shape_x = 16,
+        seed = 123, # only used on random_init
+        density = 0.5, # only used on random_init
+        animate = True
+    )
     # Performed 100 iterations of (1024, 1024) cells in 4.581923 seconds
 
-    main_other_automata(
-        # automata_class = Bugs,
-        # automata_class = Conway,
-        # automata_class = Life34,
-        # automata_class = Amoeba,
-        # automata_class = Anneal,
-        automata_class = Globe, # TODO: something wrong here
-        shape = (256, 256),
-        density=0.5,
-        seed = 16,
-    )
+    # main_other_automata(
+    #     # automata_class = Bugs,
+    #     # automata_class = Conway,
+    #     # automata_class = Life34,
+    #     # automata_class = Amoeba,
+    #     # automata_class = Anneal,
+    #     automata_class = Globe, # TODO: something wrong here
+    #     shape = (256, 256),
+    #     density=0.5,
+    #     seed = 16,
+    # )
