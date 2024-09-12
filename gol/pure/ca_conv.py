@@ -87,19 +87,21 @@ class Automata:
     def update_board(self):
         # counting number of alive cells in neighbourhood (same shape)
         count_alive = self.fft_convolve2d()
+        board_ones = self.board == 1
+        board_zeros = ~ board_ones
         new_board = np.zeros(self.shape)
         new_board[
             np.where(
                 np.isin(count_alive, self.rule[0]).reshape(self.shape)
                 &
-                (self.board == 1) # on cells
+                board_ones # on cells
             )
         ] = 1
         new_board[
             np.where(
                 np.isin(count_alive, self.rule[1]).reshape(self.shape)
                 &
-                (self.board == 0) # off cells
+                board_zeros # off cells
             )
         ] = 1
 
@@ -334,7 +336,7 @@ if __name__ == "__main__":
         density = 0.5, # only used on random_init
         animate = False
     )
-    # Performed 100 iterations of (1024, 1024) cells in 4.372775 seconds
+    # Performed 100 iterations of (1024, 1024) cells in 4.379944 seconds
 
     # main_other_automata(
     #     # automata_class = Bugs,
