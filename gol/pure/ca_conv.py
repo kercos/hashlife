@@ -183,8 +183,11 @@ class Bugs(Automata):
 
 class Globe(Automata):
     def __init__(self, shape, board):
-        neighborhood = np.ones((10, 1))
-        rule = [np.arange(34, 59), np.arange(34, 46)]
+        neighborhood = np.ones((10, 1)) # TODO: something wrong here
+        rule = [
+            np.arange(34, 59),
+            np.arange(34, 46)
+        ]
         Automata.__init__(self, shape, board, neighborhood, rule)
 
 
@@ -254,6 +257,7 @@ def main_other_automata(
 
 def main_gol(
         random_init = True, shape_x = 16,
+        animate = False, # otherwise benchmark
         seed = 123, density = 0.5 # only used on random_init
     ):
 
@@ -292,13 +296,14 @@ def main_gol(
     automata = Automata(shape, board, neighborhood, rule)
 
 
-    # Animate automata
-    # interval = 200 # ms
-    interval = 0 # as fast as possible
-    automata.animate(interval) #ms
-
-    # Benchmark automata
-    # automata.benchmark(iterations=100)
+    if animate:
+        # Animate automata
+        # interval = 200 # ms
+        interval = 0 # as fast as possible
+        automata.animate(interval) #ms
+    else:
+        # Benchmark automata
+        automata.benchmark(iterations=100)
 
 
 if __name__ == "__main__":
@@ -307,18 +312,21 @@ if __name__ == "__main__":
 
     # main_gol(
     #     random_init = True,
-    #     shape_x = 16,
+    #     shape_x = 1024,
     #     seed = 123, # only used on random_init
-    #     density = 0.5 # only used on random_init
+    #     density = 0.5, # only used on random_init
+    #     animate = False
     # )
+    # Performed 100 iterations of (1024, 1024) cells in 4.581923 seconds
 
     main_other_automata(
-        automata_class=Bugs,
-        # automata_class=Life34,
-        # automata_class=Amoeba,
-        # automata_class=Anneal,
+        # automata_class = Bugs,
+        # automata_class = Conway,
+        # automata_class = Life34,
+        # automata_class = Amoeba,
+        # automata_class = Anneal,
+        automata_class = Globe, # TODO: something wrong here
         shape = (256, 256),
         density=0.5,
         seed = 16,
-
     )
