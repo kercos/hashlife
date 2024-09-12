@@ -60,10 +60,12 @@ class Automata:
     Main count_real operation in a single time-step
     '''
     def fft_convolve2d(self):
-        board_ft = fft2(self.board) # same shape but floating numbers
+        # fft2 same shape but floating numbers
+        board_ft = fft2(self.board)
 
         # inverted fft2 (complex numbers)
         inverted = ifft2(board_ft * self.kernal_ft)
+
         # get the real part of the complex argument (real number)
         count_real = np.real(inverted)
 
@@ -86,24 +88,28 @@ class Automata:
 
     def update_board(self):
         # counting number of alive cells in neighbourhood (same shape)
-        count_alive = self.fft_convolve2d()
+        count_ones_neighbours = self.fft_convolve2d()
         board_ones = self.board == 1
-        board_zeros = ~ board_ones
+        board_zeros = ~ board_ones # negation
+
         new_board = np.zeros(self.shape)
+        # rule[0] (survival): '1->1' based on count of "1" neighbours
         new_board[
             np.where(
-                np.isin(count_alive, self.rule[0]).reshape(self.shape)
+                np.isin(count_ones_neighbours, self.rule[0]).reshape(self.shape)
                 &
                 board_ones # on cells
             )
         ] = 1
+        # rule[1] (reproduction): '0->1' based on count of "1" neighbours
         new_board[
             np.where(
-                np.isin(count_alive, self.rule[1]).reshape(self.shape)
+                np.isin(count_ones_neighbours, self.rule[1]).reshape(self.shape)
                 &
                 board_zeros # off cells
             )
         ] = 1
+        # all other cells stay zeros (1->0, 0->0)
 
         self.board = new_board
 
@@ -114,10 +120,11 @@ class Automata:
         for _ in range(iterations):
             self.update_board()
 
+        ellapsed = time.process_time() - start
         print(
             "Performed", iterations,
             "iterations of", self.board.shape,
-            "cells in", time.process_time() - start, "seconds"
+            "cells in", ellapsed, "seconds"
         )
 
 
