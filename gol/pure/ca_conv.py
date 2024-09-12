@@ -4,6 +4,7 @@ https://gist.github.com/njbbaer/4da02e2960636d349e9bae7ae43c213c
 but see also:
 - julia: https://rivesunder.github.io/SortaSota/2021/09/27/faster_life_julia.html
 - carle: https://github.com/rivesunder/carle
+- https://github.com/moritztng/cellular
 '''
 
 import time
@@ -250,6 +251,35 @@ def test_torch():
     pred = model(x)
     '''
 
+def test_torch_ca():
+    # from https://github.com/moritztng/cellular/
+    import torch
+    import torch.nn.functional as torch_functions
+
+    class Universe:
+        def __init__(self, name, state, rule, colors):
+            self.name = name
+            self.state = state
+            self.rule = rule
+            self.colors = colors
+
+        def step(self):
+            self.state = self.rule(self.state)
+    class GameOfLife:
+        def __init__(self, device):
+            self.parameters = torch.zeros((2, 2, 3, 3), dtype=torch.float32, device=device)
+            self.parameters[1, 1, :, :] = 1
+            self.parameters[1, 1, 1, 1] = 9
+
+        def __call__(self, state):
+            next_state = torch_functions.pad(state, (1, 1, 1, 1), mode="circular")
+            next_state = torch_functions.conv2d(next_state, self.parameters)
+            next_state = ((next_state == 3) + (next_state == 11) + (next_state == 12)).to(torch.float32)
+            next_state[:, 0, :, :] = 1 - next_state[:, 1, :, :]
+            return next_state
+
+
+
 def main_other_automata(
         automata_class,
         shape = (256, 256),
@@ -335,14 +365,15 @@ def main_gol(
 if __name__ == "__main__":
     # test_bugs()
     # test_torch()
+    # test_torch_ca()
 
-    main_gol(
-        random_init = True,
-        shape_x = 1024,
-        seed = 123, # only used on random_init
-        density = 0.5, # only used on random_init
-        animate = False
-    )
+    # main_gol(
+    #     random_init = True,
+    #     shape_x = 1024,
+    #     seed = 123, # only used on random_init
+    #     density = 0.5, # only used on random_init
+    #     animate = False
+    # )
     # Performed 100 iterations of (1024, 1024) cells in 4.379944 seconds
 
     # main_other_automata(
