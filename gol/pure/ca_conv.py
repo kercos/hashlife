@@ -210,16 +210,6 @@ class Animation:
         self.image.set_array(self.automata.board)
         return self.image,
 
-def test_bugs():
-    density=0.5
-    seed = 16
-    shape = (256, 256)
-    rng = np.random.default_rng(seed)
-    board = rng.uniform(0, 1, shape)
-    board = board < density
-    automata = Bugs(shape, board)
-    # automata.animate(interval=200) #ms
-    automata.benchmark(iterations=100)
 
 def test_torch():
     # import timeit
@@ -243,18 +233,33 @@ def test_torch():
     pred = model(x)
     '''
 
+def main_other_automata(
+        automata_class,
+        shape = (256, 256),
+        density=0.5,
+        seed = 16
+    ):
 
-def main():
+    rng = np.random.default_rng(seed)
+    board = rng.uniform(0, 1, shape)
+    board = board < density
 
-    random_init = True
-    shape_x = 16
+    automata = automata_class(shape, board)
+
+    # interval=200 # ms
+    interval = 0 # as fast as possible
+    automata.animate(interval)
+
+    # automata.benchmark(iterations=100)
+
+def main_gol(
+        random_init = True, shape_x = 16,
+        seed = 123, density = 0.5 # only used on random_init
+    ):
+
     shape = (shape_x, shape_x)
 
-
     if random_init:
-        seed = 123
-        density = 0.5
-
         # initialize random generator
         rng = np.random.default_rng(seed)
         board = rng.uniform(0, 1, shape)
@@ -286,11 +291,6 @@ def main():
     # init automata
     automata = Automata(shape, board, neighborhood, rule)
 
-    # Other automata
-    # automata = Bugs((256, 256), density=0.5)
-    # automata = Life34((256, 256), density=0.12)
-    # automata = Amoeba((256, 256), density=0.18)
-    # automata = Anneal((256, 256), density=0.5)
 
     # Animate automata
     # interval = 200 # ms
@@ -305,4 +305,20 @@ if __name__ == "__main__":
     # test_bugs()
     # test_torch()
 
-    main()
+    # main_gol(
+    #     random_init = True,
+    #     shape_x = 16,
+    #     seed = 123, # only used on random_init
+    #     density = 0.5 # only used on random_init
+    # )
+
+    main_other_automata(
+        automata_class=Bugs,
+        # automata_class=Life34,
+        # automata_class=Amoeba,
+        # automata_class=Anneal,
+        shape = (256, 256),
+        density=0.5,
+        seed = 16,
+
+    )
