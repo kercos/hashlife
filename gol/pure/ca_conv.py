@@ -79,34 +79,39 @@ class Automata:
         return counts_int
 
 
-    def update_board(self, intervals=1):
-        for _ in range(intervals):
-            # counting number of alive cells in neighbourhood (same shape)
-            count_alive = self.fft_convolve2d()
-            new_board = np.zeros(self.shape)
-            new_board[
-                np.where(
-                    np.isin(count_alive, self.rule[0]).reshape(self.shape)
-                    &
-                    (self.board == 1) # on cells
-                )
-            ] = 1
-            new_board[
-                np.where(
-                    np.isin(count_alive, self.rule[1]).reshape(self.shape)
-                    &
-                    (self.board == 0)  # off cells
-                )
-            ] = 1
+    def update_board(self):
+        # counting number of alive cells in neighbourhood (same shape)
+        count_alive = self.fft_convolve2d()
+        new_board = np.zeros(self.shape)
+        new_board[
+            np.where(
+                np.isin(count_alive, self.rule[0]).reshape(self.shape)
+                &
+                (self.board == 1) # on cells
+            )
+        ] = 1
+        new_board[
+            np.where(
+                np.isin(count_alive, self.rule[1]).reshape(self.shape)
+                &
+                (self.board == 0) # off cells
+            )
+        ] = 1
 
-            self.board = new_board
+        self.board = new_board
 
 
-    def benchmark(self, interations):
+    def benchmark(self, iterations):
         start = time.process_time()
-        self.update_board(interations)
-        print("Performed", interations, "iterations of", self.board.shape, "cells in",
-              time.process_time() - start, "seconds")
+
+        for _ in range(iterations):
+            self.update_board()
+
+        print(
+            "Performed", iterations,
+            "iterations of", self.board.shape,
+            "cells in", time.process_time() - start, "seconds"
+        )
 
 
     def animate(self, interval=100):
@@ -187,9 +192,16 @@ class Animation:
     def __init__(self, automata, interval=100):
         self.automata = automata
         fig = pyplot.figure()
-        self.image = pyplot.imshow(self.automata.board, interpolation="nearest",
-                                   cmap=pyplot.cm.gray)
-        ani = animation.FuncAnimation(fig, self.animate, interval=interval)
+        self.image = pyplot.imshow(
+            self.automata.board,
+            interpolation="nearest",
+            cmap=pyplot.cm.gray
+        )
+        animation.FuncAnimation(
+            fig,
+            self.animate,
+            interval=interval
+        )
         pyplot.show()
 
 
@@ -207,7 +219,7 @@ def test_bugs():
     board = board < density
     automata = Bugs(shape, board)
     # automata.animate(interval=200) #ms
-    automata.benchmark(interations=100)
+    automata.benchmark(iterations=100)
 
 def test_torch():
     # import timeit
@@ -281,10 +293,12 @@ def main():
     # automata = Anneal((256, 256), density=0.5)
 
     # Animate automata
-    automata.animate(interval=200) #ms
+    # interval = 200 # ms
+    interval = 0 # as fast as possible
+    automata.animate(interval) #ms
 
     # Benchmark automata
-    # automata.benchmark(interations=1000)
+    # automata.benchmark(iterations=100)
 
 
 if __name__ == "__main__":
