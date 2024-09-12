@@ -31,7 +31,12 @@ class Automata:
         ), "Rule cannot contain zeros"
 
         self.board = board
-        self.height, self.width = self.shape = self.board.shape
+        self.shape_x, _, = self.height, self.width = self.shape = self.board.shape
+
+        assert self.height == self.width
+
+        self.minus_shape_x_half_plus_one =  - int(self.shape_x / 2) + 1
+
         self.torus = torus
 
         nh, nw = neighborhood.shape # say (3,3) for Conway's GoL
@@ -62,12 +67,6 @@ class Automata:
         # get the real part of the complex argument (real number)
         count_real = np.real(inverted)
 
-        # rolling over the boundaries
-        # see https://en.wikipedia.org/wiki/Torus
-        if self.torus:
-            count_real = np.roll(count_real, - int(self.height / 2) + 1, axis=0)
-            count_real = np.roll(count_real, - int(self.width / 2) + 1, axis=1)
-
         # round real part to closest integer
         counts_int = np.rint(count_real)
 
@@ -75,6 +74,12 @@ class Automata:
         # counts_round = count_real.round()
         # assert np.array_equal(counts_int, counts_round)
         # return counts_round
+
+        # rolling over the boundaries
+        # see https://en.wikipedia.org/wiki/Torus
+        if self.torus:
+            counts_int = np.roll(counts_int, self.minus_shape_x_half_plus_one, axis=0)
+            counts_int = np.roll(counts_int, self.minus_shape_x_half_plus_one, axis=1)
 
         return counts_int
 
@@ -277,26 +282,26 @@ def main_gol(
             shape_x//2-sq//2:shape_x//2+sq//2
         ] = 1 # alive
 
-    # neighborhood = np.array(
-    #     [
-    #         [1, 1, 1],
-    #         [1, 0, 1],
-    #         [1, 1, 1]
-    #     ]
-    # )
+    neighborhood = np.array(
+        [
+            [1, 1, 1],
+            [1, 0, 1],
+            [1, 1, 1]
+        ]
+    )
 
     # GoL Rule (same as Conway class):
-    # rule = [
-    #     [2, 3], # 'on->on': (2,3): "on" neighbours (can't contain 0)
-    #     [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
-    # ]
-
-    # GoL Rule with neighborhood all ones:
-    neighborhood = np.ones((3,3))
     rule = [
-        [3, 4], # 'on->on': (2,3): "on" neighbours (can't contain 0)
+        [2, 3], # 'on->on': (2,3): "on" neighbours (can't contain 0)
         [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
     ]
+
+    # GoL Rule with neighborhood all ones:
+    # neighborhood = np.ones((3,3))
+    # rule = [
+    #     [3, 4], # 'on->on': (2,3): "on" neighbours (can't contain 0)
+    #     [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
+    # ]
 
     # exploring other rules:
     # rule = [
@@ -324,12 +329,12 @@ if __name__ == "__main__":
 
     main_gol(
         random_init = True,
-        shape_x = 16,
+        shape_x = 1024,
         seed = 123, # only used on random_init
         density = 0.5, # only used on random_init
-        animate = True
+        animate = False
     )
-    # Performed 100 iterations of (1024, 1024) cells in 4.581923 seconds
+    # Performed 100 iterations of (1024, 1024) cells in 4.372775 seconds
 
     # main_other_automata(
     #     # automata_class = Bugs,
