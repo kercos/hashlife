@@ -13,31 +13,16 @@ from matplotlib import pyplot, animation
 
 
 
-def fft_convolve2d(board, kernal, torus=True):
-    board_ft = fft2(board) # same shape but floating numbers
-    kernal_ft = fft2(kernal)
-
-    # get the real part of the complex argument.
-    inverted = ifft2(board_ft * kernal_ft)
-    convolution = np.real(inverted)
-
-    # rolling over the boundaries (https://en.wikipedia.org/wiki/Torus)
-    if torus:
-        height, width = board_ft.shape
-        convolution = np.roll(convolution, - int(height / 2) + 1, axis=0)
-        convolution = np.roll(convolution, - int(width / 2) + 1, axis=1)
-
-    return convolution.round()
-
-
 class Automata:
     '''
     shape: must be 2d and power of 2 to make things efficient
+    board: initial configuration (binary)
     neighborhood: who are my neighbors (maked with 1s)
-    configuration: initial configuration
+    torus: rolling over the boundaries (https://en.wikipedia.org/wiki/Torus)
     '''
-    def __init__(self, shape, board, neighborhood, rule):
+    def __init__(self, shape, board, neighborhood, rule, torus=True):
         self.board = board
+        self.torus = torus
         nh, nw = neighborhood.shape # say (3,3) for Conway's GoL
         self.kernal = np.zeros(shape) # kernal has same shape of board, say (256,256)
 
@@ -46,13 +31,33 @@ class Automata:
             (shape[0] - nh - 1) // 2 : (shape[0] + nh) // 2,
             (shape[1] - nw - 1) // 2 : (shape[1] + nw) // 2
         ] = neighborhood
+        self.kernal_ft = fft2(self.kernal) # same shape but floating numbers
 
         self.rule = rule
 
+    '''
+    Main convolution operation in a single time-step
+    '''
+    def fft_convolve2d(self):
+        board_ft = fft2(self.board) # same shape but floating numbers
+
+        # inverted fft2 (complex numbers)
+        inverted = ifft2(board_ft * self.kernal_ft)
+        # get the real part of the complex argument.
+        convolution = np.real(inverted)
+
+        # rolling over the boundaries (https://en.wikipedia.org/wiki/Torus)
+        if self.torus:
+            height, width = board_ft.shape
+            convolution = np.roll(convolution, - int(height / 2) + 1, axis=0)
+            convolution = np.roll(convolution, - int(width / 2) + 1, axis=1)
+
+        return convolution.round()
+
 
     def update_board(self, intervals=1):
-        for i in range(intervals):
-            convolution = fft_convolve2d(self.board, self.kernal)
+        for _ in range(intervals):
+            convolution = self.fft_convolve2d()
             shape = convolution.shape
             new_board = np.zeros(shape)
             new_board[np.where(np.in1d(convolution, self.rule[0]).reshape(shape)
