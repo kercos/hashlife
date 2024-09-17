@@ -310,8 +310,10 @@ class Globe(Automata):
         Automata.__init__(self, shape, board, neighborhood, rule)
 
 
-def test_torch_ca():
+def test_torch_ca_moritztng():
     # from https://github.com/moritztng/cellular/
+    import time, threading, torch
+    from queue import Queue
     import torch
     import torch.nn.functional as torch_functions
 
@@ -337,7 +339,34 @@ def test_torch_ca():
             next_state[:, 0, :, :] = 1 - next_state[:, 1, :, :]
             return next_state
 
+    def run_universe(stop_event, universe, universe_frequency, device, input_queue):
+        while not stop_event.is_set():
+            while not input_queue.empty():
+                input = input_queue.get()
+                top = max(input[0] - input[2], 0)
+                bottom = min(input[0] + input[2] + 1, universe[0].state.size(2))
+                left = max(input[1] - input[2], 0)
+                right = min(input[1] + input[2] + 1, universe[0].state.size(3))
+                one_hot = torch.zeros(universe[0].state.size(1), dtype=torch.float32, device=device)
+                one_hot[input[3]] = 1
+                universe[0].state[0, :, top:bottom, left:right] = one_hot[:, None, None]
+            universe[0].step()
+            time.sleep(1 / universe_frequency)
 
+    universes = {
+        "game_of_life": {
+            "rule": GameOfLife,
+            "state_colors": [[0, 0, 0], [0, 255, 0]]
+        }
+    }
+
+    run_universe(
+        stop_event = threading.Event(),
+        universe = [universes["game_of_life"]()],
+        universe_frequency = 30,
+        device = 'cpu',
+        input_queue = Queue()
+    )
 
 def main_other_automata(
         automata_class,
@@ -481,7 +510,7 @@ if __name__ == "__main__":
     #
     # test_bugs()
     # test_torch()
-    # test_torch_ca()
+    # test_torch_ca_moritztng()
     #
     ##############
 
