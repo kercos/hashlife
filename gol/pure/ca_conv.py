@@ -395,7 +395,7 @@ def main_other_automata(
 
 def main_gol(
         shape_x = 16,
-        initial_state = True, # 'random', 'square', 'filename.npy'
+        initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
         seed = 123,
         iterations=100,
@@ -491,7 +491,7 @@ if __name__ == "__main__":
         torus = True,
         animate = False,
         show_last_frame = False, # only applicable for benchmark
-        save_last_frame = False, # '1k.npy',
+        save_last_frame = False, # '100k.npy'
         torch_device = 'cuda', # torch cuda
         # torch_device = 'mps', # torch mps
         # torch_device = None, # numpy
