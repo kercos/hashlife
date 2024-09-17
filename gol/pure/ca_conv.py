@@ -222,6 +222,11 @@ class Automata:
             hz, "Hz"
         )
 
+    def save_last_frame(self, filename):
+        if self.use_torch:
+            self.board = self.board.cpu().detach().numpy()
+        np.save(filename, self.board)
+
     def show_current_frame(self):
         if self.use_torch:
             self.board = self.board.cpu().detach().numpy()
@@ -230,8 +235,9 @@ class Automata:
             interpolation="nearest",
             cmap=pyplot.cm.gray
         )
-        # self.image.set_array(self.board)
+
         pyplot.show()
+        # pyplot.savefig('lastframe.png')
 
     def animate(self, interval=100):
 
@@ -389,24 +395,25 @@ def main_other_automata(
 
 def main_gol(
         shape_x = 16,
-        random_init = True,
-        density = 0.5, # only used on random_init
+        initial_state = True, # 'random', 'square', 'filename.npy'
+        density = 0.5, # only used on initial_state=='random'
         seed = 123,
         iterations=100,
         torus = True,
         animate = False, # if False do benchmark
         show_last_frame = False, # only applicable for benchmark
+        save_last_frame = None, # only applicable for benchmark
         torch_device = None,
     ):
 
     shape = (shape_x, shape_x)
 
-    if random_init:
+    if initial_state == 'random':
         # initialize random generator
         rng = np.random.default_rng(seed)
         board = rng.uniform(0, 1, shape)
         board = board < density
-    else:
+    elif initial_state == 'square':
         sq = 2 # alive square size in the middle of the board
         assert sq % 2 == 0
         board = np.zeros(shape)
@@ -414,6 +421,9 @@ def main_gol(
             shape_x//2-sq//2:shape_x//2+sq//2,
             shape_x//2-sq//2:shape_x//2+sq//2
         ] = 1 # alive
+    else:
+        assert initial_state.endswith('.npy')
+        board = np.load(initial_state)
 
     neighborhood = np.array(
         [
@@ -463,7 +473,8 @@ def main_gol(
         automata.benchmark(iterations)
         if show_last_frame:
             automata.show_current_frame()
-
+        if save_last_frame:
+            automata.save_last_frame(save_last_frame)
 
 
 if __name__ == "__main__":
@@ -473,13 +484,14 @@ if __name__ == "__main__":
     #
     main_gol(
         shape_x = 1024,
-        random_init = True,
-        density = 0.5, # only used on random_init
-        seed = 123, # only used on random_init
+        initial_state = 'random', # 'square', 'filenmae.npy'
+        density = 0.5, # only used with initial_state=='random'
+        seed = 123, # only used with initial_state=='random'
         iterations=1000,
         torus = True,
         animate = False,
         show_last_frame = False, # only applicable for benchmark
+        save_last_frame = False, # '1k.npy',
         torch_device = 'cuda', # torch cuda
         # torch_device = 'mps', # torch mps
         # torch_device = None, # numpy
