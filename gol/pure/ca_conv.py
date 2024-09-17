@@ -480,7 +480,8 @@ if __name__ == "__main__":
         torus = True,
         animate = False,
         show_last_frame = False, # only applicable for benchmark
-        torch_device = 'mps', # torch mps
+        torch_device = 'cuda', # torch cuda
+        # torch_device = 'mps', # torch mps
         # torch_device = None, # numpy
     )
     #
@@ -490,17 +491,18 @@ if __name__ == "__main__":
     # BENCHMARKS
     #
     # Benchmark 100 iters, torus=True
-    # Numpy:        Performed 100 iterations of (1024, 1024) cells in 4.320508 seconds: 23.14542641744906 Hz
-    # Torch mps:    Performed 100 iterations of (1024, 1024) cells in 0.7729590000000001 seconds: 129.37296803582078 Hz
+    # Numpy:                        23 Hz
+    # Torch mps:                   129 Hz
     #
     # Benchmark 1000 iters, torus=True
-    # Numpy:        Performed 1000 iterations of (1024, 1024) cells in 43.08963 seconds: 23.207439933923776 Hz
-    # Torch mps:    Performed 1000 iterations of (1024, 1024) cells in 5.8691580000000005 seconds: 170.38219110816235 Hz
+    # Numpy:                        23 Hz
+    # Torch mps:                   170 Hz
+    # Torch cuda (RTX 3090 Ti):   2504 Hz
     #
     #
     # Benchmark 1000 iters, torus=False
     # Numpy:
-    # Torch mps:    Performed 1000 iterations of (1024, 1024) cells in 6.098491 seconds: 163.97498987864375 Hz
+    # Torch mps:                   164 Hz
     #
     #
     ##############
