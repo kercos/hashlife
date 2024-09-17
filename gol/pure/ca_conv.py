@@ -9,9 +9,10 @@ but see also:
 
 import time
 import numpy as np
-from numpy.fft import fft2, ifft2
+from numpy.fft import fft2 as np_fft2, ifft2 as np_ifft2
 from matplotlib import pyplot, animation
-
+import torch
+from torch.fft import fft2 as torch_fft2, ifft2 as torch_ifft2
 
 
 class Automata:
@@ -22,8 +23,9 @@ class Automata:
     torus: rolling over the boundaries (https://en.wikipedia.org/wiki/Torus)
     rule[0]: '1->1' based on "1" neighbours (can't contain 0)
     rule[1]: '0->1' based on "1" neighbours (can't contain 0)
+    torch_device: None or in ["cpu", "cuda", "mps"]
     '''
-    def __init__(self, shape, board, neighborhood, rule, torus=True):
+    def __init__(self, shape, board, neighborhood, rule, torus=True, torch_device = None):
 
         assert (
             0 not in rule[0]
@@ -31,7 +33,15 @@ class Automata:
             0 not in rule[1]
         ), "Rule cannot contain zeros"
 
+        assert (
+            torch_device in [None, "cpu", "cuda", "mps"]
+        ), f"torch_device ({torch_device}) not recognized"
+
+        self.torch_device = torch_device
+        self.use_torch = torch_device is not None
+
         self.board = board
+
         self.shape_x, _, = self.height, self.width = self.shape = self.board.shape
 
         assert self.height == self.width
@@ -53,19 +63,33 @@ class Automata:
             (shape[1] - nw - 1) // 2 : (shape[1] + nw) // 2
         ] = neighborhood
 
-        self.kernal_ft = fft2(self.kernal) # same shape but floating numbers
-
         self.rule = rule
+
+        # convert arrays to tensor if using torch
+        if self.use_torch:
+            # print('cuda available:', torch.cuda.is_available())
+            # print('mps available:', torch.backends.mps.is_available())
+            torch_device = torch.device(torch_device)
+            torch.set_default_device(torch_device)
+            self.rule = [torch.IntTensor(r).to(torch_device) for r in self.rule] # need to convert each rule to int tensor
+            self.board = torch.from_numpy(self.board).to(torch_device)
+            self.kernal = torch.from_numpy(self.kernal).float().to(torch_device)
+            self.kernal_ft = torch_fft2(self.kernal)
+        else:
+            self.kernal_ft = np_fft2(self.kernal) # same shape but floating numbers
+
+
+
 
     '''
     Main count_real operation in a single time-step
     '''
     def fft_convolve2d(self):
         # fft2 same shape but floating numbers
-        board_ft = fft2(self.board)
+        board_ft = np_fft2(self.board)
 
         # inverted fft2 (complex numbers)
-        inverted = ifft2(board_ft * self.kernal_ft)
+        inverted = np_ifft2(board_ft * self.kernal_ft)
 
         # get the real part of the complex argument (real number)
         count_real = np.real(inverted)
@@ -81,11 +105,48 @@ class Automata:
         # rolling over the boundaries
         # see https://en.wikipedia.org/wiki/Torus
         if self.torus:
-            counts_int = np.roll(counts_int, self.minus_shape_x_half_plus_one, axis=0)
-            counts_int = np.roll(counts_int, self.minus_shape_x_half_plus_one, axis=1)
+            counts_int = np.roll(
+                counts_int,
+                self.minus_shape_x_half_plus_one,
+                axis=(0,1)
+            )
 
         return counts_int
 
+    '''
+    Main count_real operation in a single time-step (torch version)
+    '''
+    def fft_convolve2d_torch(self):
+        # fft2 same shape but floating numbers
+        board_ft = torch_fft2(self.board)
+
+        # inverted fft2 (complex numbers)
+        inverted = torch_ifft2(board_ft * self.kernal_ft)
+
+        # get the real part of the complex argument (real number)
+        count_real = torch.real(inverted)
+
+        # round real part to closest integer
+        counts_int = torch.round(count_real).int()
+
+        # double check
+        # counts_round = count_real.round()
+        # assert np.array_equal(counts_int, counts_round)
+        # return counts_round
+
+        # rolling over the boundaries
+        # see https://en.wikipedia.org/wiki/Torus
+        if self.torus:
+            counts_int = torch.roll(
+                counts_int,
+                (
+                    self.minus_shape_x_half_plus_one,
+                    self.minus_shape_x_half_plus_one
+                ), # need tuple here because torch behaves differently from numpy apparently
+                dims=(0,1)
+            )
+
+        return counts_int
 
     def update_board(self):
         # counting number of alive cells in neighbourhood (same shape)
@@ -114,12 +175,43 @@ class Automata:
 
         self.board = new_board
 
+    def update_board_torch(self):
+        # counting number of alive cells in neighbourhood (same shape)
+        count_ones_neighbours = self.fft_convolve2d_torch()
+        board_ones = self.board == 1
+        board_zeros = ~ board_ones # negation
+
+        new_board = torch.zeros(self.shape)
+        # rule[0] (survival): '1->1' based on count of "1" neighbours
+        new_board[
+            torch.where(
+                torch.isin(count_ones_neighbours, self.rule[0]).reshape(self.shape)
+                &
+                board_ones # on cells
+            )
+        ] = 1
+        # rule[1] (reproduction): '0->1' based on count of "1" neighbours
+        new_board[
+            torch.where(
+                torch.isin(count_ones_neighbours, self.rule[1]).reshape(self.shape)
+                &
+                board_zeros # off cells
+            )
+        ] = 1
+        # all other cells stay zeros (1->0, 0->0)
+
+        self.board = new_board
 
     def benchmark(self, iterations):
         start = time.process_time()
 
-        for _ in range(iterations):
-            self.update_board()
+        if self.use_torch:
+            for _ in range(iterations):
+                self.update_board_torch()
+
+        else:
+            for _ in range(iterations):
+                self.update_board()
 
         ellapsed = time.process_time() - start
         print(
@@ -234,13 +326,21 @@ def test_torch():
     import torch
     print('cuda available:', torch.cuda.is_available())
     print('mps available:', torch.backends.mps.is_available())
-    mps_device = torch.device("mps")
+    torch_device = torch.device("mps")
+    torch.set_default_device(torch_device)
+
     # Create a Tensor directly on the mps device
-    x = torch.ones(5, device=mps_device)
+    x = torch.ones(5, device=torch_device)
+
     # x = torch.rand((10000, 10000), dtype=torch.float32)
     # Any operation happens on the GPU
-    y = x * 2
-    print(y)
+
+    board = torch.zeros((128,128))
+    board = torch.fft.fft2(board)
+    # board = torch.fft.ifft2
+    board = (board > 2) & (board<5)
+
+    # board.cpu().numpy() // check this, you may need to copy it to cpu
 
     '''
     # Move your model to mps just like any other device
@@ -301,8 +401,10 @@ def main_other_automata(
 
 def main_gol(
         random_init = True, shape_x = 16,
-        animate = False, # otherwise benchmark
-        seed = 123, density = 0.5 # only used on random_init
+        animate = False, # if False do benchmark
+        seed = 123, density = 0.5, # only used on random_init
+        torus = True,
+        torch_device = None
     ):
 
     shape = (shape_x, shape_x)
@@ -349,7 +451,14 @@ def main_gol(
     # ]
 
     # init automata
-    automata = Automata(shape, board, neighborhood, rule)
+    automata = Automata(
+        shape = shape,
+        board = board,
+        neighborhood = neighborhood,
+        rule = rule,
+        torus = torus,
+        torch_device = torch_device
+    )
 
 
     if animate:
@@ -367,14 +476,17 @@ if __name__ == "__main__":
     # test_torch()
     # test_torch_ca()
 
-    # main_gol(
-    #     random_init = True,
-    #     shape_x = 1024,
-    #     seed = 123, # only used on random_init
-    #     density = 0.5, # only used on random_init
-    #     animate = False
-    # )
-    # Performed 100 iterations of (1024, 1024) cells in 4.379944 seconds
+    main_gol(
+        random_init = True,
+        shape_x = 1024,
+        seed = 123, # only used on random_init
+        density = 0.5, # only used on random_init
+        animate = False,
+        torus = True,
+        torch_device = 'mps'
+    )
+    # Numpy:        Performed 100 iterations of (1024, 1024) cells in 4.27 seconds
+    # Torch mps:    Performed 100 iterations of (1024, 1024) cells in 0.94 seconds
 
     # main_other_automata(
     #     # automata_class = Bugs,
