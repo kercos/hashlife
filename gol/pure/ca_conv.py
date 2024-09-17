@@ -214,12 +214,24 @@ class Automata:
                 self.update_board()
 
         ellapsed = time.process_time() - start
+        hz = iterations / ellapsed
         print(
             "Performed", iterations,
-            "iterations of", self.board.shape,
-            "cells in", ellapsed, "seconds"
+            "iterations of", self.shape,
+            "cells in", ellapsed, "seconds:",
+            hz, "Hz"
         )
 
+    def show_current_frame(self):
+        if self.use_torch:
+            self.board = self.board.cpu().detach().numpy()
+        self.image = pyplot.imshow(
+            self.board,
+            interpolation="nearest",
+            cmap=pyplot.cm.gray
+        )
+        # self.image.set_array(self.board)
+        pyplot.show()
 
     def animate(self, interval=100):
 
@@ -298,59 +310,6 @@ class Globe(Automata):
         Automata.__init__(self, shape, board, neighborhood, rule)
 
 
-class Animation:
-    def __init__(self, automata, interval=100):
-        self.automata = automata
-        fig = pyplot.figure()
-        self.image = pyplot.imshow(
-            self.automata.board,
-            interpolation="nearest",
-            cmap=pyplot.cm.gray
-        )
-        animation.FuncAnimation(
-            fig,
-            self.animate,
-            interval=interval
-        )
-        pyplot.show()
-
-
-    def animate(self, *args):
-        self.automata.update_board()
-        self.image.set_array(self.automata.board)
-        return self.image,
-
-
-def test_torch():
-    # import timeit
-    import torch
-    print('cuda available:', torch.cuda.is_available())
-    print('mps available:', torch.backends.mps.is_available())
-    torch_device = torch.device("mps")
-    torch.set_default_device(torch_device)
-
-    # Create a Tensor directly on the mps device
-    x = torch.ones(5, device=torch_device)
-
-    # x = torch.rand((10000, 10000), dtype=torch.float32)
-    # Any operation happens on the GPU
-
-    board = torch.zeros((128,128))
-    board = torch.fft.fft2(board)
-    # board = torch.fft.ifft2
-    board = (board > 2) & (board<5)
-
-    # board.cpu().numpy() // check this, you may need to copy it to cpu
-
-    '''
-    # Move your model to mps just like any other device
-    model = YourFavoriteNet()
-    model.to(mps_device)
-
-    # Now every call runs on the GPU
-    pred = model(x)
-    '''
-
 def test_torch_ca():
     # from https://github.com/moritztng/cellular/
     import torch
@@ -400,11 +359,15 @@ def main_other_automata(
     # automata.benchmark(iterations=100)
 
 def main_gol(
-        random_init = True, shape_x = 16,
-        animate = False, # if False do benchmark
-        seed = 123, density = 0.5, # only used on random_init
+        shape_x = 16,
+        random_init = True,
+        density = 0.5, # only used on random_init
+        seed = 123,
+        iterations=100,
         torus = True,
-        torch_device = None
+        animate = False, # if False do benchmark
+        show_last_frame = False, # only applicable for benchmark
+        torch_device = None,
     ):
 
     shape = (shape_x, shape_x)
@@ -468,26 +431,57 @@ def main_gol(
         automata.animate(interval) #ms
     else:
         # Benchmark automata
-        automata.benchmark(iterations=100)
+        automata.benchmark(iterations)
+        if show_last_frame:
+            automata.show_current_frame()
+
 
 
 if __name__ == "__main__":
+
+    ##############
+    # CONWAY GAME OF LIFE
+    #
+    main_gol(
+        shape_x = 1024,
+        random_init = True,
+        density = 0.5, # only used on random_init
+        seed = 123, # only used on random_init
+        iterations=1000,
+        torus = True,
+        animate = False,
+        show_last_frame = False, # only applicable for benchmark
+        # torch_device = 'mps', # torch mps
+        torch_device = None, # numpy
+    )
+    #
+    ##############
+
+    ##############
+    # BENCHMARKS
+    #
+    # Benchmark 100
+    # Numpy:        Performed 100 iterations of (1024, 1024) cells in 4.320508 seconds: 23.14542641744906 Hz
+    # Torch mps:    Performed 100 iterations of (1024, 1024) cells in 0.7729590000000001 seconds: 129.37296803582078 Hz
+    #
+    # Benchmark 1000
+    # Numpy:        Performed 1000 iterations of (1024, 1024) cells in 43.08963 seconds: 23.207439933923776 Hz
+    # Torch mps:    Performed 1000 iterations of (1024, 1024) cells in 6.304886000000001 seconds: 158.60715007376817 Hz
+    #
+    ##############
+
+    ##############
+    # TESTS
+    #
     # test_bugs()
     # test_torch()
     # test_torch_ca()
+    #
+    ##############
 
-    main_gol(
-        random_init = True,
-        shape_x = 1024,
-        seed = 123, # only used on random_init
-        density = 0.5, # only used on random_init
-        animate = False,
-        torus = True,
-        torch_device = 'mps'
-    )
-    # Numpy:        Performed 100 iterations of (1024, 1024) cells in 4.27 seconds
-    # Torch mps:    Performed 100 iterations of (1024, 1024) cells in 0.94 seconds
-
+    ##############
+    # OTHER AUTOMATA
+    #
     # main_other_automata(
     #     # automata_class = Bugs,
     #     # automata_class = Conway,
@@ -499,3 +493,5 @@ if __name__ == "__main__":
     #     density=0.5,
     #     seed = 16,
     # )
+    #
+    ##############
