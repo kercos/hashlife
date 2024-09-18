@@ -214,12 +214,17 @@ class Automata:
                 self.update_board()
 
         ellapsed = time.process_time() - start
+
         hz = iterations / ellapsed
+
+        hz_B_cell = hz * self.shape_x * self.shape_x / 10 ** 9 # Billions
+
         print(
             "Performed", iterations,
             "iterations of", self.shape,
-            "cells in", ellapsed, "seconds:",
-            hz, "Hz"
+            f"cells in {ellapsed:.0f} sec:",
+            f"{hz:.0f} Hz (board)",
+            f"{hz_B_cell:.2f} BHz (cell)"
         )
 
     def save_last_frame(self, filename):
