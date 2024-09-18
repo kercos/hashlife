@@ -50,7 +50,8 @@ class Automata:
 
         self.torus = torus
 
-        nh, nw = neighborhood.shape # say (3,3) for Conway's GoL
+        self.neighborhood = neighborhood
+        nh, nw = self.neighborhood.shape # say (3,3) for Conway's GoL
 
         # create the kernal (init as zero)
         # put neighborhood mask in the middle (everything else is 0.)
@@ -61,7 +62,7 @@ class Automata:
         self.kernal[
             (shape[0] - nh - 1) // 2 : (shape[0] + nh) // 2,
             (shape[1] - nw - 1) // 2 : (shape[1] + nw) // 2
-        ] = neighborhood
+        ] = self.neighborhood
 
         self.rule = rule
 
@@ -72,7 +73,8 @@ class Automata:
             torch_device = torch.device(torch_device)
             torch.set_default_device(torch_device)
             self.rule = [torch.IntTensor(r).to(torch_device) for r in self.rule] # need to convert each rule to int tensor
-            self.board = torch.from_numpy(self.board).to(torch_device)
+            self.neighborhood = torch.from_numpy(self.neighborhood).int().to(torch_device) # make sure it's int
+            self.board = torch.from_numpy(self.board).int().to(torch_device) # make sure it's int
             self.kernal = torch.from_numpy(self.kernal).float().to(torch_device)
             self.kernal_ft = torch_fft2(self.kernal)
         else:
@@ -117,17 +119,26 @@ class Automata:
     Main count_real operation in a single time-step (torch version)
     '''
     def fft_convolve2d_torch(self):
+
+
+        # create two more dim
+        board_new = self.board[None,None,:,:]
+        nb_new = self.neighborhood[None,None,:,:]
+
+        counts_int = torch.nn.functional.conv2d(board_new, nb_new, padding='same')
+        counts_int = counts_int[0,0,:,:] # taking only first two channels in first two dim
+
         # fft2 same shape but floating numbers
-        board_ft = torch_fft2(self.board)
+        # board_ft = torch_fft2(self.board)
 
         # inverted fft2 (complex numbers)
-        inverted = torch_ifft2(board_ft * self.kernal_ft)
+        # inverted = torch_ifft2(board_ft * self.kernal_ft)
 
         # get the real part of the complex argument (real number)
-        count_real = torch.real(inverted)
+        # count_real = torch.real(inverted)
 
         # round real part to closest integer
-        counts_int = torch.round(count_real).int()
+        # counts_int = torch.round(count_real).int()
 
         # double check
         # counts_round = count_real.round()
@@ -181,7 +192,7 @@ class Automata:
         board_ones = self.board == 1
         board_zeros = ~ board_ones # negation
 
-        new_board = torch.zeros(self.shape)
+        new_board = torch.zeros(self.shape, dtype=self.board.dtype)
         # rule[0] (survival): '1->1' based on count of "1" neighbours
         new_board[
             torch.where(
@@ -497,6 +508,7 @@ if __name__ == "__main__":
         animate = False,
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = False, # '100k.npy'
+        # torch_device = 'cpu', # torch cpu
         torch_device = 'cuda', # torch cuda
         # torch_device = 'mps', # torch mps
         # torch_device = None, # numpy
