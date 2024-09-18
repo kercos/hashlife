@@ -503,14 +503,14 @@ if __name__ == "__main__":
         initial_state = 'random', # 'square', 'filenmae.npy'
         density = 0.5, # only used with initial_state=='random'
         seed = 123, # only used with initial_state=='random'
-        iterations=1000,
+        iterations=10000,
         torus = True,
         animate = False,
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = False, # '100k.npy'
         # torch_device = 'cpu', # torch cpu
-        # torch_device = 'cuda', # torch cuda
-        torch_device = 'mps', # torch mps
+        torch_device = 'cuda', # torch cuda
+        # torch_device = 'mps', # torch mps
         # torch_device = None, # numpy
     )
     #
@@ -519,20 +519,10 @@ if __name__ == "__main__":
     ##############
     # BENCHMARKS
     #
-    # Benchmark 100 iters, torus=True
-    # Numpy:                        23 Hz
-    # Torch mps:                   129 Hz
-    #
     # Benchmark 1000 iters, torus=True
     # Numpy:                        23 Hz
-    # Torch mps:                   170 Hz
-    # Torch cuda (RTX 3090 Ti):   2504 Hz
-    #
-    #
-    # Benchmark 1000 iters, torus=False
-    # Numpy:
-    # Torch mps:                   164 Hz
-    #
+    # Torch mps:                   209 Hz
+    # Torch cuda (RTX 3090 Ti):   3295 Hz
     #
     ##############
 
