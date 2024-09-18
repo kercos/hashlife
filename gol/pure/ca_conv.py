@@ -72,9 +72,9 @@ class Automata:
             # print('mps available:', torch.backends.mps.is_available())
             torch_device = torch.device(torch_device)
             torch.set_default_device(torch_device)
-            self.rule = [torch.IntTensor(r).to(torch_device) for r in self.rule] # need to convert each rule to int tensor
-            self.neighborhood = torch.from_numpy(self.neighborhood).int().to(torch_device) # make sure it's int
-            self.board = torch.from_numpy(self.board).int().to(torch_device) # make sure it's int
+            self.rule = [torch.FloatTensor(r).to(torch_device) for r in self.rule] # need to convert each rule to float tensor
+            self.neighborhood = torch.from_numpy(self.neighborhood).float().to(torch_device) # make sure it's float
+            self.board = torch.from_numpy(self.board).float().to(torch_device) # make sure it's float
             self.kernal = torch.from_numpy(self.kernal).float().to(torch_device)
             self.kernal_ft = torch_fft2(self.kernal)
         else:
@@ -120,12 +120,11 @@ class Automata:
     '''
     def fft_convolve2d_torch(self):
 
+        # create two more dims
+        board_conv = self.board[None,None,:,:]
+        nb_conv = self.neighborhood[None,None,:,:]
 
-        # create two more dim
-        board_new = self.board[None,None,:,:]
-        nb_new = self.neighborhood[None,None,:,:]
-
-        counts_int = torch.nn.functional.conv2d(board_new, nb_new, padding='same')
+        counts_int = torch.nn.functional.conv2d(board_conv, nb_conv, padding='same')
         counts_int = counts_int[0,0,:,:] # taking only first two channels in first two dim
 
         # fft2 same shape but floating numbers
@@ -187,12 +186,13 @@ class Automata:
         self.board = new_board
 
     def update_board_torch(self):
+
         # counting number of alive cells in neighbourhood (same shape)
         count_ones_neighbours = self.fft_convolve2d_torch()
         board_ones = self.board == 1
         board_zeros = ~ board_ones # negation
 
-        new_board = torch.zeros(self.shape, dtype=self.board.dtype)
+        new_board = torch.zeros(self.shape, dtype=torch.float32) # float
         # rule[0] (survival): '1->1' based on count of "1" neighbours
         new_board[
             torch.where(
@@ -509,8 +509,8 @@ if __name__ == "__main__":
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = False, # '100k.npy'
         # torch_device = 'cpu', # torch cpu
-        torch_device = 'cuda', # torch cuda
-        # torch_device = 'mps', # torch mps
+        # torch_device = 'cuda', # torch cuda
+        torch_device = 'mps', # torch mps
         # torch_device = None, # numpy
     )
     #
