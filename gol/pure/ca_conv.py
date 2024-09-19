@@ -13,7 +13,7 @@ from numpy.fft import fft2 as np_fft2, ifft2 as np_ifft2
 from matplotlib import pyplot, animation
 import torch
 from torch.fft import fft2 as torch_fft2, ifft2 as torch_ifft2
-
+import scipy
 
 class Automata:
     '''
@@ -68,7 +68,7 @@ class Automata:
             # TODO check:
             # - not always perfectly centered
             # - e.g., with 3x3 neighborhood and grid size being even (power of two)
-            self.kernal = np.zeros(self.shape) # kernal has same shape of board, say (256,256)
+            self.kernal = np.zeros(self.shape, dtype=np.float32) # kernal has same shape of board, say (256,256)
             self.kernal[
                 (self.shape[0] - nh - 1) // 2 : (self.shape[0] + nh) // 2,
                 (self.shape[1] - nw - 1) // 2 : (self.shape[1] + nw) // 2
@@ -82,7 +82,7 @@ class Automata:
             torch.set_default_device(torch_device)
 
             if use_fft:
-                # less efficient (buth worth mentioning)
+                # less efficient (buth worth trying)
                 self.torch_conv_func = self.torch_conv_fft
                 self.board = torch.from_numpy(self.board).to(torch_device)
                 self.rule = [torch.IntTensor(r).to(torch_device) for r in self.rule] # int
@@ -113,16 +113,8 @@ class Automata:
     '''
     def np_conv_conv2d(self):
 
-        # create two more dims
-        board_conv = self.board[None,None,:,:]
-        nb_conv = self.neighborhood[None,None,:,:]
-
-        # the conv2d step
-        # TODO: find numpy function, the following doesn't work
-        counts_int = np.nn.functional.conv2d(board_conv, nb_conv, padding='same')
-
-        # taking only first two channels in first two dim
-        counts_int = counts_int[0,0,:,:]
+        # the conv2d step (via scipy)
+        counts_int = scipy.signal.convolve2d(self.board, self.neighborhood, mode='same')
 
         # rolling over the boundaries
         # see https://en.wikipedia.org/wiki/Torus
@@ -342,7 +334,7 @@ class Automata:
     Main Benchmark to run it as fast as possible (without visualizing it)
     '''
     def benchmark(self, iterations):
-        start = time.process_time() # TODO: check perf_counter() ?
+        start = time.process_time() # TODO: change to pytorch profiler
 
         if self.use_torch:
             for _ in range(iterations):
@@ -352,7 +344,7 @@ class Automata:
             for _ in range(iterations):
                 self.np_update_board()
 
-        ellapsed = time.process_time() - start # TODO: check perf_counter() ?
+        ellapsed = time.process_time() - start # TODO: change to pytorch profiler
 
         hz = iterations / ellapsed
 
@@ -640,7 +632,7 @@ if __name__ == "__main__":
         animate = False,
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = False, # '100k.npy'
-        use_fft = False, # or conv2d
+        use_fft = False, # conv2d (more efficient)
         # torch_device = 'cpu', # torch cpu
         torch_device = 'cuda', # torch cuda
         # torch_device = 'mps', # torch mps
@@ -652,12 +644,15 @@ if __name__ == "__main__":
     ##############
     # BENCHMARKS
     #
-    # Benchmark 1000 iters, torus=True, conv2d (use_fft = False)
-    # Numpy:                        26 Hz
-    # Torch mps:                   209 Hz
-    # Torch cuda (RTX 3090 Ti):   1196 Hz (fft)
+    # Benchmark 1000 iters, torus=True, conv2d
+    # Numpy (M1):                   31 Hz
+    # Torch mps (M1):              259 Hz
     # Torch cuda (RTX 3090 Ti):   3294 Hz
     #
+    # Benchmark 1000 iters, torus=True, fft (less efficient)
+    # Numpy (M1):                   24 Hz
+    # Torch mps (M1):              186 Hz
+    # Torch cuda (RTX 3090 Ti):   1196 Hz
     ##############
 
     ##############
