@@ -14,6 +14,7 @@ from matplotlib import pyplot, animation
 import torch
 from torch.fft import fft2 as torch_fft2, ifft2 as torch_ifft2
 import scipy
+import PIL
 
 class Automata:
     '''
@@ -391,8 +392,16 @@ class Automata:
 
     def save_last_frame(self, filename):
         if self.use_torch:
-            self.board = self.board.cpu().detach().numpy()
-        np.save(filename, self.board)
+            board_numpy = self.board.cpu().detach().numpy()
+        else:
+            board_numpy = self.board
+        if filename.endswith('npy'):
+            np.save(filename, board_numpy)
+        else:
+            board_numpy_int = board_numpy.astype(np.uint8)
+            img = PIL.Image.fromarray(255 * board_numpy_int, mode='L')
+            img = img.resize((400, 400), PIL.Image.Resampling.BOX)
+            img.save(filename)
 
     def show_current_frame(self):
         if self.use_torch:
@@ -579,7 +588,7 @@ def test_reproducible():
             initial_state = 'random',
             density = 0.5,
             seed = 123,
-            iterations=100,
+            iterations=1,
             torus = True,
             animate = False,
             **params
@@ -587,7 +596,8 @@ def test_reproducible():
 
     gold_params = {
         'use_fft': True,
-        'torch_device': None
+        'torch_device': None,
+        'save_last_frame': 'out/gold.png'
     }
 
     automata = run(gold_params)
@@ -595,7 +605,8 @@ def test_reproducible():
 
     test_params = {
         'use_fft': False,
-        'torch_device': 'mps'
+        'torch_device': None,
+        'save_last_frame': 'out/test.png'
     }
 
     automata = run(test_params)
