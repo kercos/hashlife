@@ -107,6 +107,12 @@ class Automata:
                 # use conv2d (more efficient)
                 self.numpy_conv_func = self.np_conv_conv2d
 
+
+    def get_board_numpy(self):
+        if self.use_torch:
+            return self.board.cpu().detach().numpy()
+        return self.board
+
     '''
     Main count_real operation in a single time-step
     Based on numpy and conv2d
@@ -558,12 +564,48 @@ def main_gol(
         if save_last_frame:
             automata.save_last_frame(save_last_frame)
 
+    return automata
 
-if __name__ == "__main__":
+def test_sum_pool():
+    input = torch.ones((5,5), dtype=torch.float16)
+    output = torch.nn.functional.avg_pool1d(input, 3, stride=1) * 8
+    print(output)
 
-    ##############
+def test_reproducible():
+
+    def run(params):
+        return main_gol(
+            shape_x = 16,
+            initial_state = 'random',
+            density = 0.5,
+            seed = 123,
+            iterations=100,
+            torus = True,
+            animate = False,
+            **params
+        )
+
+    gold_params = {
+        'use_fft': True,
+        'torch_device': None
+    }
+
+    automata = run(gold_params)
+    gold_state = automata.get_board_numpy()
+
+    test_params = {
+        'use_fft': False,
+        'torch_device': 'mps'
+    }
+
+    automata = run(test_params)
+    test_state = automata.get_board_numpy()
+
+    print('Test succeded:', np.all(gold_state==test_state))
+
+
+def main():
     # CONWAY GAME OF LIFE
-    #
     main_gol(
         shape_x = 2**10, #1024,
         initial_state = 'random', # 'square', 'filenmae.npy'
@@ -576,22 +618,28 @@ if __name__ == "__main__":
         save_last_frame = False, # '100k.npy'
         use_fft = False, # conv2d (more efficient)
         # torch_device = 'cpu', # torch cpu
-        torch_device = 'cuda', # torch cuda
-        # torch_device = 'mps', # torch mps
+        # torch_device = 'cuda', # torch cuda
+        torch_device = 'mps', # torch mps
         # torch_device = None, # numpy
     )
-    #
-    ##############
+
+if __name__ == "__main__":
+
+    # test_sum_pool()
+
+    test_reproducible()
+
+    # main()
 
     ##############
     # BENCHMARKS
     #
-    # Benchmark 1000 iters, torus=True, conv2d
+    # Benchmark, 1024x1024 grid, 1000 iters, torus=True, conv2d
     # Numpy (M1):                   31 Hz
     # Torch mps (M1):              259 Hz
     # Torch cuda (RTX 3090 Ti):   3294 Hz
     #
-    # Benchmark 1000 iters, torus=True, fft (less efficient)
+    # Benchmark, 1024x1024 grid, 1000 iters, torus=True, fft (less efficient)
     # Numpy (M1):                   24 Hz
     # Torch mps (M1):              186 Hz
     # Torch cuda (RTX 3090 Ti):   1196 Hz
