@@ -14,7 +14,7 @@ from matplotlib import pyplot, animation
 import torch
 from torch.fft import fft2 as torch_fft2, ifft2 as torch_ifft2
 import scipy
-import PIL
+from PIL import Image, ImageDraw
 
 class Automata:
     '''
@@ -398,9 +398,25 @@ class Automata:
         if filename.endswith('npy'):
             np.save(filename, board_numpy)
         else:
-            board_numpy_int = board_numpy.astype(np.uint8)
-            img = PIL.Image.fromarray(255 * board_numpy_int, mode='L')
-            img = img.resize((400, 400), PIL.Image.Resampling.BOX)
+            wh_src = board_numpy.shape[0] # original width, height
+            px_wh = 50 # pixel width, height
+            wh = wh_src * px_wh # final width, height
+            line_color = (255,100,0)
+            board_np = board_numpy.astype(np.uint8)
+            board_np = 255 * np.stack((board_np,) * 3, axis=-1) # RGB
+            img = Image.fromarray(board_np, mode='RGB')
+            img = img.resize((wh, wh), Image.Resampling.BOX)
+
+            # draw lines
+            draw = ImageDraw.Draw(img)
+            for i in range(1,wh_src):
+                # (0,0) at top-left corner
+                xy = i * px_wh
+                shape_v = [(xy, 0), (xy, wh)]
+                shape_h = [(0, xy), (wh, xy)]
+                draw.line(shape_v, fill=line_color, width=2)
+                draw.line(shape_h, fill=line_color, width=2)
+
             img.save(filename)
 
     def show_current_frame(self):
@@ -584,7 +600,7 @@ def test_reproducible():
 
     def run(params):
         return main_gol(
-            shape_x = 16,
+            shape_x = 4,
             initial_state = 'random',
             density = 0.5,
             seed = 123,
