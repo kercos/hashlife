@@ -361,7 +361,7 @@ class Automata:
         print(
             "Performed", iterations,
             "iterations of", self.shape,
-            f"cells in {ellapsed} s",
+            f"cells in {ellapsed:.1f} s",
             f"{hz:.0f} Hz (board)",
             f"{hz_B_cell:.2f} BHz (cell)"
         )
@@ -668,24 +668,24 @@ def test_reproducible():
 def main():
     # CONWAY GAME OF LIFE
     main_gol(
-        shape_x = 16, # 2**10 == 1024,
+        shape_x = 2**10, # 2**10 == 1024,
         initial_state = 'random', # 'square', 'filenmae.npy'
         density = 0.5, # only used with initial_state=='random'
         seed = 123, # only used with initial_state=='random'
         iterations=1000,
-        torus = True, # TODO: fix me
-        # - fft (np, torch) always True
-        # - conv2d
-        #   - np: works :)
-        #   - torch: always False
-        animate = True,
+        torus = True, # TODO: fix me (see below)
+            # - fft (np, torch) always True
+            # - conv2d
+            #   - np: works :)
+            #   - torch: always False
+        animate = False, # benchmark if False
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = False, # '100k.npy'
         use_fft = False, # conv2d (more efficient)
         # torch_device = 'cpu', # torch cpu
         # torch_device = 'cuda', # torch cuda
-        # torch_device = 'mps', # torch mps
-        torch_device = None, # numpy
+        torch_device = 'mps', # torch mps
+        # torch_device = None, # numpy
     )
 
 if __name__ == "__main__":
@@ -700,15 +700,16 @@ if __name__ == "__main__":
     ##############
     # BENCHMARKS
     #
-    # Benchmark, 1024x1024 grid, 1000 iters, torus=True, conv2d
-    # Numpy (M1):                   31 Hz
-    # Torch mps (M1):              259 Hz
-    # Torch cuda (RTX 3090 Ti):   3294 Hz
-    #
-    # Benchmark, 1024x1024 grid, 1000 iters, torus=True, fft (less efficient)
+    # Benchmark (fft): 1024x1024 grid, 1000 iters, torus=True (less efficient)
     # Numpy (M1):                   24 Hz
-    # Torch mps (M1):              186 Hz
+    # Torch mps (M1):              217 Hz
     # Torch cuda (RTX 3090 Ti):   1196 Hz
+    #
+    # Benchmark (conv2D): 1024x1024 grid, 1000 iters, torus=True
+    # Numpy (M1):                   31 Hz
+    # Torch mps (M1):              248 Hz --> TODO: torus false in conv2d
+    # Torch cuda (RTX 3090 Ti):   3294 Hz --> TODO: torus false in conv2d
+    #
     ##############
 
     ##############
