@@ -116,29 +116,6 @@ class Automata:
 
     '''
     Main count_real operation in a single time-step
-    Based on numpy and conv2d
-    '''
-    def np_conv_conv2d(self):
-
-        # the conv2d step (via scipy)
-        counts_int = scipy.signal.convolve2d(
-            self.board,
-            self.neighborhood,
-            mode='same'
-        )
-
-        # rolling over the boundaries
-        # see https://en.wikipedia.org/wiki/Torus
-        if self.torus:
-            pass # TODO: fix me
-
-        # not here! this is only for fft
-        # counts_int = self.np_recenter_conv(counts_int)
-
-        return counts_int
-
-    '''
-    Main count_real operation in a single time-step
     Based on numpy and fft
     '''
     def np_conv_fft(self):
@@ -172,6 +149,29 @@ class Automata:
         return counts_int
 
     '''
+    Main count_real operation in a single time-step
+    Based on numpy and conv2d
+    '''
+    def np_conv_conv2d(self):
+
+        # the conv2d step (via scipy)
+        counts_int = scipy.signal.convolve2d(
+            self.board,
+            self.neighborhood,
+            mode='same'
+        )
+
+        # rolling over the boundaries
+        # see https://en.wikipedia.org/wiki/Torus
+        if self.torus:
+            pass # TODO: fix me
+
+        # not here! this is only for fft
+        # counts_int = self.np_recenter_conv(counts_int)
+
+        return counts_int
+
+    '''
     Rolling over the boundaries (numpy version)
     see https://en.wikipedia.org/wiki/Torus
     '''
@@ -181,6 +181,51 @@ class Automata:
             self.minus_shape_x_half_plus_one,
             axis=(0,1)
         )
+
+    '''
+    Apply the rule (numpy version)
+    '''
+    def np_apply_rule(self, count_ones_neighbours):
+
+        board_ones = self.board == 1
+        board_zeros = ~ board_ones # negation
+
+        new_board = np.zeros(self.shape)
+
+        # rule[0] (survival): '1->1' based on count of "1" neighbours
+        new_board[
+            np.where(
+                np.isin(count_ones_neighbours, self.rule[0]).reshape(self.shape)
+                &
+                board_ones # on cells
+            )
+        ] = 1
+
+        # rule[1] (reproduction): '0->1' based on count of "1" neighbours
+        new_board[
+            np.where(
+                np.isin(count_ones_neighbours, self.rule[1]).reshape(self.shape)
+                &
+                board_zeros # off cells
+            )
+        ] = 1
+
+        # all other cells stay zeros (1->0, 0->0)
+
+        self.board = new_board
+
+    '''
+    Step update function using numpy
+    '''
+    def np_update_board(self):
+
+        # counting number of alive cells in neighbourhood (same shape)
+        # via fft or conv2 based on torch_conv_func
+        # (np_conv_fft or np_conv_conv2d)
+        count_ones_neighbours = self.numpy_conv_func()
+
+        # apply rule (update board inplace)
+        self.np_apply_rule(count_ones_neighbours)
 
     '''
     Main count_real operation in a single time-step (torch version)
@@ -252,38 +297,6 @@ class Automata:
         )
 
     '''
-    Apply the rule (numpy version)
-    '''
-    def np_apply_rule(self, count_ones_neighbours):
-
-        board_ones = self.board == 1
-        board_zeros = ~ board_ones # negation
-
-        new_board = np.zeros(self.shape)
-
-        # rule[0] (survival): '1->1' based on count of "1" neighbours
-        new_board[
-            np.where(
-                np.isin(count_ones_neighbours, self.rule[0]).reshape(self.shape)
-                &
-                board_ones # on cells
-            )
-        ] = 1
-
-        # rule[1] (reproduction): '0->1' based on count of "1" neighbours
-        new_board[
-            np.where(
-                np.isin(count_ones_neighbours, self.rule[1]).reshape(self.shape)
-                &
-                board_zeros # off cells
-            )
-        ] = 1
-
-        # all other cells stay zeros (1->0, 0->0)
-
-        self.board = new_board
-
-    '''
     Apply the rule (torch version)
     '''
     def torch_apply_rule(self, count_ones_neighbours):
@@ -313,19 +326,6 @@ class Automata:
         # all other cells stay zeros (1->0, 0->0)
 
         self.board = new_board
-
-    '''
-    Step update function using numpy
-    '''
-    def np_update_board(self):
-
-        # counting number of alive cells in neighbourhood (same shape)
-        # via fft or conv2 based on torch_conv_func
-        # (np_conv_fft or np_conv_conv2d)
-        count_ones_neighbours = self.numpy_conv_func()
-
-        # apply rule (update board inplace)
-        self.np_apply_rule(count_ones_neighbours)
 
     '''
     Step update function using torch
