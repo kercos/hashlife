@@ -107,6 +107,7 @@ class Automata:
             else:
                 # use conv2d (more efficient)
                 self.numpy_conv_func = self.np_conv_conv2d
+                self.np_conv2d_boundary = 'circular' if self.torus else 'fill'
 
 
     def get_board_numpy(self):
@@ -158,16 +159,11 @@ class Automata:
         counts_int = scipy.signal.convolve2d(
             self.board,
             self.neighborhood,
-            mode='same'
+            mode = 'same',
+            boundary = self.np_conv2d_boundary # 'circular' if torus, 'fill' if strict
+            # rolling over the boundaries
+            # see https://en.wikipedia.org/wiki/Torus
         )
-
-        # rolling over the boundaries
-        # see https://en.wikipedia.org/wiki/Torus
-        if self.torus:
-            pass # TODO: fix me
-
-        # not here! this is only for fft
-        # counts_int = self.np_recenter_conv(counts_int)
 
         return counts_int
 
@@ -268,17 +264,19 @@ class Automata:
         nb_conv = self.neighborhood[None,None,:,:]
 
         # the conv2d step
-        counts_int = torch.nn.functional.conv2d(board_conv, nb_conv, padding='same')
-
-        # taking only first two channels in first two dim
-        counts_int = counts_int[0,0,:,:]
+        counts_int = torch.nn.functional.conv2d(
+            board_conv,
+            nb_conv,
+            padding='same'
+            # boundaries missing
+        )
 
         if self.torus:
             pass
             # TODO: fix me
 
-        # not here! this is only for fft
-        # counts_int = self.torch_recenter_conv(counts_int)
+        # taking only first two channels in first two dim
+        counts_int = counts_int[0,0,:,:]
 
         return counts_int
 
@@ -675,7 +673,11 @@ def main():
         density = 0.5, # only used with initial_state=='random'
         seed = 123, # only used with initial_state=='random'
         iterations=1000,
-        torus = True, # TODO: this is not effective in fft and perhaps conv2d
+        torus = True, # TODO: fix me
+        # - fft (np, torch) always True
+        # - conv2d
+        #   - np: works :)
+        #   - torch: always False
         animate = True,
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = False, # '100k.npy'
