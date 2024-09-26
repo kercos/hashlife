@@ -121,12 +121,19 @@ class Automata:
     def np_conv_conv2d(self):
 
         # the conv2d step (via scipy)
-        counts_int = scipy.signal.convolve2d(self.board, self.neighborhood, mode='same')
+        counts_int = scipy.signal.convolve2d(
+            self.board,
+            self.neighborhood,
+            mode='same'
+        )
 
         # rolling over the boundaries
         # see https://en.wikipedia.org/wiki/Torus
         if self.torus:
-            counts_int = self.np_roll_boundaries(counts_int)
+            pass # TODO: fix me
+
+        # not here! this is only for fft
+        # counts_int = self.np_recenter_conv(counts_int)
 
         return counts_int
 
@@ -135,10 +142,13 @@ class Automata:
     Based on numpy and fft
     '''
     def np_conv_fft(self):
+
         # fft2 same shape but floating numbers
+        # you get torus=True for free
         board_ft = np_fft2(self.board)
 
         # inverted fft2 (complex numbers)
+        # you get torus=True for free
         inverted = np_ifft2(board_ft * self.kernal_ft)
 
         # get the real part of the complex argument (real number)
@@ -149,8 +159,15 @@ class Automata:
 
         # rolling over the boundaries
         # see https://en.wikipedia.org/wiki/Torus
-        if self.torus:
-            counts_int = self.np_roll_boundaries(counts_int)
+        if not self.torus:
+            pass
+            # TODO: fix me
+            # by default fft assumes torus boundaries condition
+            # need to implment this if we want strict boundaries
+
+        # this is necessary (only in fft) for making things work
+        # TODO: understand this better
+        counts_int = self.np_recenter_conv(counts_int)
 
         return counts_int
 
@@ -158,7 +175,7 @@ class Automata:
     Rolling over the boundaries (numpy version)
     see https://en.wikipedia.org/wiki/Torus
     '''
-    def np_roll_boundaries(self, counts_int):
+    def np_recenter_conv(self, counts_int):
         return np.roll(
             counts_int,
             self.minus_shape_x_half_plus_one,
@@ -170,6 +187,7 @@ class Automata:
     Usign FFT (not as efficient as torch.nn.functional.conv2d)
     '''
     def torch_conv_fft(self):
+
         # fft2 same shape but floating numbers
         board_ft = torch_fft2(self.board)
 
@@ -182,9 +200,15 @@ class Automata:
         # round real part to closest integer
         counts_int = torch.round(count_real).int()
 
-        if self.torus:
-            # rolling over the boundaries
-            counts_int = self.torch_roll_boundaries(counts_int)
+        if not self.torus:
+            pass
+            # TODO: fix me
+            # by default fft assumes torus boundaries condition
+            # need to implment this if we want strict boundaries
+
+        # this is necessary (only in fft) for making things work
+        # TODO: understand this better
+        counts_int = self.torch_recenter_conv(counts_int)
 
         return counts_int
 
@@ -205,32 +229,11 @@ class Automata:
         counts_int = counts_int[0,0,:,:]
 
         if self.torus:
-            # rolling over the boundaries
-            counts_int = self.torch_roll_boundaries(counts_int)
+            pass
+            # TODO: fix me
 
-        return counts_int
-
-    '''
-    Main count_real operation in a single time-step
-    torch version using fft (less efficient)
-    '''
-    def torch_conv_fft(self):
-
-        # fft2 same shape but floating numbers
-        board_ft = torch_fft2(self.board)
-
-        # inverted fft2 (complex numbers)
-        inverted = torch_ifft2(board_ft * self.kernal_ft)
-
-        # get the real part of the complex argument (real number)
-        count_real = torch.real(inverted)
-
-        # round real part to closest integer
-        counts_int = torch.round(count_real).int()
-
-        if self.torus:
-            # rolling over the boundaries
-            counts_int = self.torch_roll_boundaries(counts_int)
+        # not here! this is only for fft
+        # counts_int = self.torch_recenter_conv(counts_int)
 
         return counts_int
 
@@ -238,7 +241,7 @@ class Automata:
     Rolling over the boundaries (torch version)
     see https://en.wikipedia.org/wiki/Torus
     '''
-    def torch_roll_boundaries(self, counts_int):
+    def torch_recenter_conv(self, counts_int):
         return torch.roll(
             counts_int,
             (
@@ -371,13 +374,20 @@ class Automata:
     def animate(self, interval=100):
 
         def update_animation(*args):
-            self.np_update_board()
-            self.image.set_array(self.board)
-            return self.image,
+            if self.use_torch:
+                self.torch_update_board()
+            else:
+                self.np_update_board()
+            # make sure it's numpy array
+            board_numpy = self.get_board_numpy()
+            self.image.set_array(board_numpy)
+            return self.image
 
         fig = pyplot.figure()
+
+        # first frame
         self.image = pyplot.imshow(
-            self.board,
+            self.get_board_numpy(),
             interpolation="nearest",
             cmap=pyplot.cm.gray
         )
@@ -390,11 +400,16 @@ class Automata:
         )
         pyplot.show()
 
-    def save_last_frame(self, filename):
+    def get_board_numpy(self):
         if self.use_torch:
-            board_numpy = self.board.cpu().detach().numpy()
-        else:
-            board_numpy = self.board
+            return self.board.cpu().detach().numpy()
+        return self.board
+
+    def save_last_frame(self, filename):
+
+        # make sure it's numpy array
+        board_numpy = self.get_board_numpy()
+
         if filename.endswith('npy'):
             np.save(filename, board_numpy)
         else:
@@ -596,6 +611,27 @@ def test_sum_pool():
     output = torch.nn.functional.avg_pool1d(input, 3, stride=1) * 8
     print(output)
 
+def manual_check():
+
+    automata = main_gol(
+        shape_x = 4,
+        initial_state = 'random',
+        density = 0.5,
+        seed = 123,
+        iterations=0,
+        torus = True,
+        animate = False,
+        use_fft = True,
+        torch_device = None, # numpy
+    )
+
+    automata.save_last_frame('out/manual_0.png')
+    automata.np_update_board()
+    automata.save_last_frame('out/manual_1.png')
+
+
+
+
 def test_reproducible():
 
     def run(params):
@@ -634,29 +670,30 @@ def test_reproducible():
 def main():
     # CONWAY GAME OF LIFE
     main_gol(
-        shape_x = 2**10, #1024,
+        shape_x = 16, # 2**10 == 1024,
         initial_state = 'random', # 'square', 'filenmae.npy'
         density = 0.5, # only used with initial_state=='random'
         seed = 123, # only used with initial_state=='random'
         iterations=1000,
-        torus = True,
-        animate = False,
+        torus = True, # TODO: this is not effective in fft and perhaps conv2d
+        animate = True,
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = False, # '100k.npy'
         use_fft = False, # conv2d (more efficient)
         # torch_device = 'cpu', # torch cpu
         # torch_device = 'cuda', # torch cuda
-        torch_device = 'mps', # torch mps
-        # torch_device = None, # numpy
+        # torch_device = 'mps', # torch mps
+        torch_device = None, # numpy
     )
 
 if __name__ == "__main__":
 
     # test_sum_pool()
 
-    test_reproducible()
+    # manual_check()
+    # test_reproducible()
 
-    # main()
+    main()
 
     ##############
     # BENCHMARKS
