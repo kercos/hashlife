@@ -683,8 +683,8 @@ def main():
         save_last_frame = False, # '100k.npy'
         use_fft = False, # conv2d (more efficient)
         # torch_device = 'cpu', # torch cpu
-        # torch_device = 'cuda', # torch cuda
-        torch_device = 'mps', # torch mps
+        torch_device = 'cuda', # torch cuda
+        # torch_device = 'mps', # torch mps
         # torch_device = None, # numpy
     )
 
@@ -703,12 +703,12 @@ if __name__ == "__main__":
     # Benchmark (fft): 1024x1024 grid, 1000 iters, torus=True (less efficient)
     # Numpy (M1):                   24 Hz
     # Torch mps (M1):              217 Hz
-    # Torch cuda (RTX 3090 Ti):   1196 Hz
+    # Torch cuda (RTX 3090 Ti):   2459 Hz
     #
     # Benchmark (conv2D): 1024x1024 grid, 1000 iters, torus=True
     # Numpy (M1):                   31 Hz
     # Torch mps (M1):              248 Hz --> TODO: torus false in conv2d
-    # Torch cuda (RTX 3090 Ti):   3294 Hz --> TODO: torus false in conv2d
+    # Torch cuda (RTX 3090 Ti):   3520 Hz --> TODO: torus false in conv2d
     #
     ##############
 
