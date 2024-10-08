@@ -261,19 +261,27 @@ class Automata:
 
         # create two more dims
         board_conv = self.board[None,None,:,:]
-        nb_conv = self.neighborhood[None,None,:,:]
-
-        # the conv2d step
-        counts_int = torch.nn.functional.conv2d(
-            board_conv,
-            nb_conv,
-            padding='same'
-            # boundaries missing
-        )
 
         if self.torus:
-            pass
-            # TODO: fix me
+            padding_mode = 'circular'
+        else:
+            padding_mode = 'zeros'
+
+        # the conv2d class
+        conv2d_model = torch.nn.Conv2d(
+            in_channels = 1,
+            out_channels = 1,
+            kernel_size = self.neighborhood.shape, # 3x3
+            padding = 'same',
+            padding_mode = padding_mode # circular (torus) or zero (default)
+        )
+
+        # set the weight
+        with torch.no_grad():
+            conv2d_model.weight[0,0] = self.neighborhood
+
+        # apply convolution step
+        counts_int = conv2d_model(board_conv)
 
         # taking only first two channels in first two dim
         counts_int = counts_int[0,0,:,:]
@@ -366,16 +374,20 @@ class Automata:
             f"{hz_B_cell:.2f} BHz (cell)"
         )
 
+    def update_board(self):
+        if self.use_torch:
+            self.torch_update_board()
+        else:
+            self.np_update_board()
+
     '''
     Show grid in real time (rely on numpy for now)
     '''
     def animate(self, interval=100):
 
         def update_animation(*args):
-            if self.use_torch:
-                self.torch_update_board()
-            else:
-                self.np_update_board()
+            # update board once (using numpy or torch)
+            self.update_board()
             # make sure it's numpy array
             board_numpy = self.get_board_numpy()
             self.image.set_array(board_numpy)
@@ -619,18 +631,15 @@ def manual_check():
         iterations=0,
         torus = True,
         animate = False,
-        use_fft = True,
-        torch_device = None, # numpy
+        use_fft = False,
+        torch_device = 'mps', # numpy
     )
 
     automata.save_last_frame('out/manual_0.png')
-    automata.np_update_board()
+    automata.update_board()
     automata.save_last_frame('out/manual_1.png')
 
-
-
-
-def test_reproducible():
+def check_reproducible():
 
     def run(params):
         return main_gol(
@@ -644,26 +653,51 @@ def test_reproducible():
             **params
         )
 
+    # gold: Numpy FFT
     gold_params = {
+        'torch_device': None, # numpy
         'use_fft': True,
-        'torch_device': None,
-        'save_last_frame': 'out/gold.png'
     }
 
     automata = run(gold_params)
     gold_state = automata.get_board_numpy()
 
+    # test 1: Numpy Conv
+    test_name = 'Numpy Conv'
     test_params = {
-        'use_fft': False,
-        'torch_device': None,
-        'save_last_frame': 'out/test.png'
+        'torch_device': None, # numpy
+        'use_fft': False, # conv2d
     }
 
     automata = run(test_params)
     test_state = automata.get_board_numpy()
 
-    print('Test succeded:', np.all(gold_state==test_state))
+    print(f'{test_name} test succeded:', np.all(gold_state==test_state))
 
+    # test 2: Torch Conv
+    test_name = 'Torch MPS'
+    test_params = {
+        'torch_device': 'mps', # numpy
+        'use_fft': False, # conv2d
+    }
+
+    automata = run(test_params)
+    test_state = automata.get_board_numpy()
+
+    print(f'{test_name} test succeded:', np.all(gold_state==test_state))
+
+def reproduce_animation():
+    main_gol(
+        shape_x = 16,
+        initial_state = 'random',
+        density = 0.5,
+        seed = 123,
+        iterations=100,
+        torus = True,
+        animate = True,
+        use_fft = True, # False for conv2d
+        torch_device = None # use None for (numpy)
+    )
 
 def main():
     # CONWAY GAME OF LIFE
@@ -674,29 +708,47 @@ def main():
         seed = 123, # only used with initial_state=='random'
         iterations=1000,
         torus = True, # TODO: fix me (see below)
-            # - fft (np, torch) always True
+            # - fft (numpy, torch) always True
             # - conv2d
-            #   - np: works :)
-            #   - torch: always False
+            #   - numpy: works :)
+            #   - torch: work in progress (see torch_conv_conv2d)
         animate = False, # benchmark if False
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = False, # '100k.npy'
         use_fft = False, # conv2d (more efficient)
         # torch_device = 'cpu', # torch cpu
-        torch_device = 'cuda', # torch cuda
+        # torch_device = 'cuda', # torch cuda
         # torch_device = 'mps', # torch mps
-        # torch_device = None, # numpy
+        torch_device = None, # numpy
     )
 
 if __name__ == "__main__":
 
+    '''
+    Run manual check and verify manually 4x4 GoL
+    '''
+    manual_check()
+
+    '''
+    Check all is working fine (all models have consistent results)
+    '''
+    # check_reproducible()
+
+    '''
+    Reproduce the animation which should look familiar
+    '''
+    # reproduce_animation()
+
+    '''
+    The main code
+    '''
+    # main()
+
+    '''
+    Test some alternative methods (e.g, sum instead of conv2d)
+    '''
     # test_sum_pool()
 
-
-    # manual_check()
-    # test_reproducible()
-
-    main()
 
     ##############
     # BENCHMARKS
