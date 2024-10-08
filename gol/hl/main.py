@@ -1,9 +1,11 @@
 import time
-from hl.lifeparsers import autoguess_life_file
-from hl.hashlife import (
+from gol.hl.lifeparsers import autoguess_life_file
+from gol.hl.hashlife import (
     construct, ffwd, successor, join,
     expand, advance, centre
 )
+from gol.hl.render import render_img
+import matplotlib.pyplot as plt
 
 # run the breeder forward many generations
 def load_lif(fname):
@@ -18,9 +20,6 @@ if __name__ == "__main__":
     print(f"Computation took {t*1000.0:.1f}ms")
     print(successor.cache_info())
     print(join.cache_info())
-
-    from render import render_img
-    import matplotlib.pyplot as plt
 
     ## test the Gosper glider gun
     pat = load_lif("lifep/gun30.LIF")
