@@ -12,7 +12,16 @@
 - `output`
   - `manual`: manual tests for `pure` (4x4)
 
+## run the code
+- pure
+  - `python -m gol.pure.main`
+- hl
+  - `python -m gol.hl.main`
+
 ## See also:
 - [johnhw (hashlife)](https://johnhw.github.io/hashlife/index.md.html) for a full explanation.
 - [SortaSota (julia)](https://rivesunder.github.io/SortaSota/2021/09/27/faster_life_julia.html)
 - [rivesunder (carle)](https://github.com/rivesunder/carle)
+
+## TODO
+- see `moritztng` (or remove if not relevant)
