@@ -1,12 +1,3 @@
-'''
-this code is from:
-https://gist.github.com/njbbaer/4da02e2960636d349e9bae7ae43c213c
-but see also:
-- julia: https://rivesunder.github.io/SortaSota/2021/09/27/faster_life_julia.html
-- carle: https://github.com/rivesunder/carle
-- https://github.com/moritztng/cellular
-'''
-
 import time
 import numpy as np
 from numpy.fft import fft2 as np_fft2, ifft2 as np_ifft2
