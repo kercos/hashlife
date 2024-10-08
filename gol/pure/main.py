@@ -753,7 +753,7 @@ if __name__ == "__main__":
     #
     # Benchmark (conv2D): 1024x1024 grid, 1000 iters, torus=True
     # Numpy (M1):                   31 Hz
-    # Torch mps (M1):              290 Hz
+    # Torch mps (M1):              302 Hz
     # Torch cuda (RTX 3090 Ti):   2866 Hz
     #
     ##############
