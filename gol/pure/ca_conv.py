@@ -98,6 +98,18 @@ class Automata:
                 self.rule = [torch.FloatTensor(r).to(torch_device) for r in self.rule] # float
                 self.neighborhood = torch.from_numpy(self.neighborhood).float().to(torch_device)
                 self.rule_dtype = torch.float32
+
+                # the conv2d class
+                self.conv2d_model = torch.nn.Conv2d(
+                    in_channels = 1,
+                    out_channels = 1,
+                    kernel_size = self.neighborhood.shape, # 3x3
+                    padding = 'same',
+                    padding_mode = 'circular' if self.torus else 'zeros'
+                )
+                # set the conv2d weight
+                with torch.no_grad():
+                    self.conv2d_model.weight[0,0] = self.neighborhood
         else:
             # numpy
             if use_fft:
@@ -266,26 +278,8 @@ class Automata:
         # create two more dims
         board_conv = self.board[None,None,:,:]
 
-        if self.torus:
-            padding_mode = 'circular'
-        else:
-            padding_mode = 'zeros'
-
-        # the conv2d class
-        conv2d_model = torch.nn.Conv2d(
-            in_channels = 1,
-            out_channels = 1,
-            kernel_size = self.neighborhood.shape, # 3x3
-            padding = 'same',
-            padding_mode = padding_mode # circular (torus) or zero (default)
-        )
-
-        # set the weight
-        with torch.no_grad():
-            conv2d_model.weight[0,0] = self.neighborhood
-
         # apply convolution step
-        counts_int = conv2d_model(board_conv)
+        counts_int = self.conv2d_model(board_conv)
 
         # taking only first two channels in first two dim
         counts_int = counts_int[0,0,:,:]
@@ -715,8 +709,8 @@ def main():
         density = 0.5, # only used with initial_state=='random'
         seed = 123, # only used with initial_state=='random'
         iterations = 1000,
-        torus = True, # TODO: fix me (see below)
-            # - fft (numpy, torch) always True
+        torus = True,
+            # - fft (numpy, torch) always True TODO: fix me
             # - conv2d
             #   - numpy: works :)
             #   - torch: works :)
@@ -725,9 +719,9 @@ def main():
         save_last_frame = False, # '100k.npy'
         use_fft = False, # conv2d (more efficient)
         # torch_device = 'cpu', # torch cpu
-        # torch_device = 'cuda', # torch cuda
+        torch_device = 'cuda', # torch cuda
         # torch_device = 'mps', # torch mps
-        torch_device = None, # numpy
+        # torch_device = None, # numpy
     )
 
 if __name__ == "__main__":
@@ -745,12 +739,12 @@ if __name__ == "__main__":
     '''
     Reproduce the animation which should look familiar
     '''
-    reproduce_animation()
+    # reproduce_animation()
 
     '''
     The main code
     '''
-    # main()
+    main()
 
     '''
     Test some alternative methods (e.g, sum instead of conv2d)
@@ -769,7 +763,7 @@ if __name__ == "__main__":
     # Benchmark (conv2D): 1024x1024 grid, 1000 iters, torus=True
     # Numpy (M1):                   31 Hz
     # Torch mps (M1):              248 Hz --> TODO: torus false in conv2d
-    # Torch cuda (RTX 3090 Ti):   3520 Hz --> TODO: torus false in conv2d
+    # Torch cuda (RTX 3090 Ti):   2866 Hz
     #
     ##############
 
