@@ -5,6 +5,13 @@
 - `hl`: hashlife from [johnhw](https://github.com/johnhw/hashlife).
 - `moritztng`: https://github.com/moritztng/cellular
 
+## input/output dirs (gitignored)
+- `input`
+  - `hl_imgs` (hl)
+  - `hl_lifep` (hl)
+- `output`
+  - `manual`: manual tests for `pure` (4x4)
+
 ## See also:
 - [johnhw (hashlife)](https://johnhw.github.io/hashlife/index.md.html) for a full explanation.
 - [SortaSota (julia)](https://rivesunder.github.io/SortaSota/2021/09/27/faster_life_julia.html)

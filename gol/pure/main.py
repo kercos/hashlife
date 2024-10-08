@@ -628,9 +628,9 @@ def manual_check():
         torch_device = None, # None for numpy
     )
 
-    automata.save_last_frame('out/manual/test_0.png')
+    automata.save_last_frame('output/manual/test_0.png')
     automata.update_board()
-    automata.save_last_frame('out/manual/test_1.png')
+    automata.save_last_frame('output/manual/test_1.png')
 
 def check_reproducible():
 

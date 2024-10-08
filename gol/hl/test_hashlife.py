@@ -36,7 +36,7 @@ def test_bootstrap():
         assert successor.cache_info().currsize == 65536
 
 
-test_fname = "lifep/gun30.lif"
+test_fname = "input/hl_lifep/gun30.lif"
 test_pattern, _ = autoguess_life_file(test_fname)
 
 
@@ -55,7 +55,7 @@ def test_advance():
 
 
 def test_ffwd_large():
-    pat, _ = autoguess_life_file("lifep/breeder.lif")
+    pat, _ = autoguess_life_file("input/hl_lifep/breeder.lif")
     ffwd(construct(pat), 64)
 
 
@@ -86,7 +86,7 @@ def verify_baseline(pat, n):
 
 
 def test_gray():
-    pat, _ = autoguess_life_file("lifep/breeder.lif")
+    pat, _ = autoguess_life_file("input/hl_lifep/breeder.lif")
     node = construct(pat)
     total_on = len(expand(node))
     for l in range(6):
@@ -101,7 +101,7 @@ def verify_clipped(node, x1, y1, x2, y2):
 
 
 def test_clip():
-    pat, _ = autoguess_life_file("lifep/breeder.lif")
+    pat, _ = autoguess_life_file("input/hl_lifep/breeder.lif")
     node = construct(pat)
     verify_clipped(node, 0, 0, 1600, 1600)
     verify_clipped(node, 0, 0, 160, 160)
@@ -112,7 +112,7 @@ def test_clip():
 def test_all_patterns():
     for pat_fname in os.listdir("lifep"):
         if pat_fname.endswith(".lif"):
-            pat, _ = autoguess_life_file("lifep/" + pat_fname)
+            pat, _ = autoguess_life_file("input/hl_lifep/" + pat_fname)
             verify_baseline(pat, 64)
 
 
