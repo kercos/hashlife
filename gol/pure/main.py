@@ -628,9 +628,9 @@ def manual_check():
         torch_device = None, # None for numpy
     )
 
-    automata.save_last_frame('out/manual_0.png')
+    automata.save_last_frame('out/manual/test_0.png')
     automata.update_board()
-    automata.save_last_frame('out/manual_1.png')
+    automata.save_last_frame('out/manual/test_1.png')
 
 def check_reproducible():
 
@@ -720,7 +720,7 @@ if __name__ == "__main__":
     '''
     Run manual check and verify manually 4x4 GoL
     '''
-    # manual_check()
+    manual_check()
 
     '''
     Check all is working fine (all models have consistent results)
@@ -735,7 +735,7 @@ if __name__ == "__main__":
     '''
     The main code
     '''
-    main()
+    # main()
 
     '''
     Test some alternative methods (e.g, sum instead of conv2d)
