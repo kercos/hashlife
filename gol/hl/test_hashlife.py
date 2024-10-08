@@ -15,7 +15,7 @@ from gol.hl.hashlife import (
     advance,
     ffwd,
 )
-from hl.lifeparsers import autoguess_life_file
+from gol.hl.lifeparsers import autoguess_life_file
 from itertools import product
 import os
 from functools import lru_cache
@@ -160,3 +160,5 @@ def validate_tree(node):
         validate_tree(node.c)
         validate_tree(node.d)
 
+if __name__ == "__main__":
+    test_baseline()
