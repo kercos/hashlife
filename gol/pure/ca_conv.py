@@ -165,6 +165,10 @@ class Automata:
             # see https://en.wikipedia.org/wiki/Torus
         )
 
+        # round real part to closest integer
+        # TODO: double check type, this may not be necessary
+        counts_int = np.rint(counts_int)
+
         return counts_int
 
     '''
@@ -285,6 +289,10 @@ class Automata:
 
         # taking only first two channels in first two dim
         counts_int = counts_int[0,0,:,:]
+
+        # round real part to closest integer
+        # make sure its dtype is self.rule_dtype
+        counts_int = torch.round(counts_int)
 
         return counts_int
 
@@ -632,7 +640,7 @@ def manual_check():
         torus = True,
         animate = False,
         use_fft = False,
-        torch_device = 'mps', # numpy
+        torch_device = None, # None for numpy
     )
 
     automata.save_last_frame('out/manual_0.png')
@@ -693,10 +701,10 @@ def reproduce_animation():
         density = 0.5,
         seed = 123,
         iterations=100,
-        torus = True,
+        torus = False,
         animate = True,
-        use_fft = True, # False for conv2d
-        torch_device = None # use None for (numpy)
+        use_fft = False, # False for conv2d
+        torch_device = 'mps' # use None for (numpy)
     )
 
 def main():
@@ -706,12 +714,12 @@ def main():
         initial_state = 'random', # 'square', 'filenmae.npy'
         density = 0.5, # only used with initial_state=='random'
         seed = 123, # only used with initial_state=='random'
-        iterations=1000,
+        iterations = 1000,
         torus = True, # TODO: fix me (see below)
             # - fft (numpy, torch) always True
             # - conv2d
             #   - numpy: works :)
-            #   - torch: work in progress (see torch_conv_conv2d)
+            #   - torch: works :)
         animate = False, # benchmark if False
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = False, # '100k.npy'
@@ -727,7 +735,7 @@ if __name__ == "__main__":
     '''
     Run manual check and verify manually 4x4 GoL
     '''
-    manual_check()
+    # manual_check()
 
     '''
     Check all is working fine (all models have consistent results)
@@ -737,7 +745,7 @@ if __name__ == "__main__":
     '''
     Reproduce the animation which should look familiar
     '''
-    # reproduce_animation()
+    reproduce_animation()
 
     '''
     The main code
