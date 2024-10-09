@@ -6,34 +6,46 @@ from gol.hl.hashlife import (
 )
 from gol.hl.render import render_img
 import matplotlib.pyplot as plt
+import os
 
 # run the breeder forward many generations
 def load_lif(fname):
     pat, comments = autoguess_life_file(fname)
     return construct(pat)
 
-
-if __name__ == "__main__":
+def ffwd_log(inputfile):
     init_t = time.perf_counter()
-    print(ffwd(load_lif("input/hl_lifep/breeder.lif"), 64))
+    pat = load_lif(inputfile)
+    print(ffwd(pat, 64))
     t = time.perf_counter() - init_t
-    print(f"Computation took {t*1000.0:.1f}ms")
+    print(f'Computation took {t*1000.0:.1f}ms')
     print(successor.cache_info())
     print(join.cache_info())
 
+
+def expand_routine(inputfile):
+    filename_ext = os.path.basename(inputfile)
+    filename, ext = os.path.splitext(filename_ext)
+    os.path.splitext(filename_ext)
+    outputdir = 'output/hl_imgs'
+
     ## test the Gosper glider gun
-    pat = load_lif("input/hl_lifep/gun30.LIF")
-    pat = load_lif("input/hl_lifep/gun30.lif")
+    pat = load_lif(inputfile)
     render_img(expand(pat))
-    plt.savefig("input/hl_imgs/gun30_0.png", bbox_inches="tight")
+    plt.savefig(f'{outputdir}/{filename}_0.png', bbox_inches='tight')
     render_img(expand(advance(centre(centre(pat)), 30)))
-    plt.savefig("input/hl_imgs/gun30_30.png", bbox_inches="tight")
+    plt.savefig(f'{outputdir}/{filename}_30.png', bbox_inches='tight')
 
     render_img(expand(advance(centre(centre(pat)), 120), level=0))
-    plt.savefig("input/hl_imgs/gun30_120_0.png", bbox_inches="tight")
+    plt.savefig(f'{outputdir}/{filename}_120_0.png', bbox_inches='tight')
     render_img(expand(advance(centre(centre(pat)), 120), level=1))
-    plt.savefig("input/hl_imgs/gun30_120_1.png", bbox_inches="tight")
+    plt.savefig(f'{outputdir}/{filename}_120_1.png', bbox_inches='tight')
     render_img(expand(advance(centre(centre(pat)), 120), level=2))
-    plt.savefig("input/hl_imgs/gun30_120_2.png", bbox_inches="tight")
+    plt.savefig(f'{outputdir}/{filename}_120_2.png', bbox_inches='tight')
     render_img(expand(advance(centre(centre(pat)), 120), level=3))
-    plt.savefig("input/hl_imgs/gun30_120_3.png", bbox_inches="tight")
+    plt.savefig(f'{outputdir}/{filename}_120_3.png', bbox_inches='tight')
+
+if __name__ == '__main__':
+    ffwd_log('input/hl_lifep/breeder.lif')
+    expand_routine('input/hl_lifep/gun30.LIF')
+
