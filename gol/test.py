@@ -24,11 +24,21 @@ def make_base_file(shape_x, filepath):
     filepath = filepath
     numpy_to_life_106(board, filepath)
 
-def test_ffw(filepath):
+def test_ffw(filepath, n=1000):
     pat_tuples, comments = autoguess_life_file(filepath)
     pat = construct(pat_tuples)
     init_t = time.perf_counter()
-    print(ffwd(pat, 1000))
+    print(ffwd(pat, n))
+    t = time.perf_counter() - init_t
+    print(f'Computation took {t*1000.0:.1f} ms')
+    print(successor.cache_info())
+    print(join.cache_info())
+
+def test_advance(filepath, n=1000):
+    pat_tuples, comments = autoguess_life_file(filepath)
+    pat = construct(pat_tuples)
+    init_t = time.perf_counter()
+    print(advance(pat, n))
     t = time.perf_counter() - init_t
     print(f'Computation took {t*1000.0:.1f} ms')
     print(successor.cache_info())
@@ -70,7 +80,12 @@ def main_base16():
     shape_x = 16
     base16_filepath = 'output/base16.LIFE'
     make_base_file(shape_x, base16_filepath)
+
+    print('test ffw')
     test_ffw(base16_filepath)
+    print('test advance')
+    test_advance(base16_filepath)
+
     test_render(base16_filepath)
     # test_base_animate(shape_x=16)
     test_base_animate(shape_x=16, expand=20, interval_ms=0)
@@ -79,11 +94,19 @@ def main_base1k():
     shape_x = 1024
     base1k_filepath = 'output/base1k.LIFE'
     make_base_file(shape_x, base1k_filepath)
-    test_ffw(base1k_filepath) # stuck in ffw
+
+    print('test ffw')
+    test_ffw(base1k_filepath)
+    # TODO: gets stuck in ffw (successor)
+
+    # print('test advance')
+    # test_advance(base1k_filepath, n=10)
+    # TODO: gets stuck in advance (successor)
+
     # test_render(base1k_filepath)
     # test_base_animate(shape_x)
     # test_base_animate(shape_x=16, expand=20, interval_ms=0)
 
 if __name__ == "__main__":
     main_base16()
-    # main_base1k()
+    # main_base1k() # TODO: gets stuck in ffw/advance (successor)
