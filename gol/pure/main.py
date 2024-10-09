@@ -523,18 +523,11 @@ def main_other_automata(
 
     # automata.benchmark(iterations=100)
 
-def main_gol(
+def init_gol_board_nb_rule(
         shape_x = 16,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
         seed = 123,
-        iterations=100,
-        torus = True,
-        animate = False, # if False do benchmark
-        show_last_frame = False, # only applicable for benchmark
-        save_last_frame = None, # only applicable for benchmark
-        use_fft = False,
-        torch_device = None,
     ):
 
     shape = (shape_x, shape_x)
@@ -582,6 +575,30 @@ def main_gol(
     #     [2], # 'on->on': "on" neighbours (can't contain 0)
     #     [1]  # 'off->on':   "on" neighbours (can't contain 0)
     # ]
+
+    return board, neighborhood, rule
+
+def main_gol(
+        shape_x = 16,
+        initial_state = 'random', # 'random', 'square', 'filename.npy'
+        density = 0.5, # only used on initial_state=='random'
+        seed = 123,
+        iterations=100,
+        torus = True,
+        animate = False, # if False do benchmark
+        show_last_frame = False, # only applicable for benchmark
+        save_last_frame = None, # only applicable for benchmark
+        use_fft = False,
+        torch_device = None,
+    ):
+
+    # init gol board and rule
+    board, neighborhood, rule = init_gol_board_nb_rule(
+        shape_x = shape_x,
+        initial_state = initial_state,
+        density = density,
+        seed = seed
+    )
 
     # init automata
     automata = Automata(
@@ -686,10 +703,10 @@ def reproduce_animation():
         density = 0.5,
         seed = 123,
         iterations=100,
-        torus = False,
+        torus = True,
         animate = True,
         use_fft = False, # False for conv2d
-        torch_device = 'mps' # use None for (numpy)
+        torch_device = None # use None for (numpy)
     )
 
 def main():
@@ -720,7 +737,7 @@ if __name__ == "__main__":
     '''
     Run manual check and verify manually 4x4 GoL
     '''
-    manual_check()
+    # manual_check()
 
     '''
     Check all is working fine (all models have consistent results)
@@ -730,7 +747,7 @@ if __name__ == "__main__":
     '''
     Reproduce the animation which should look familiar
     '''
-    # reproduce_animation()
+    reproduce_animation()
 
     '''
     The main code
