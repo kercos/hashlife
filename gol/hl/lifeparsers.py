@@ -23,53 +23,22 @@ Writing RLE files is also supported with to_rle() and write_rle()
 import os, re, textwrap
 import numpy as np
 
-# Convert a list of (x,y) positions to a (dense) NumPy array
+# Convert a list of (x,y) positions to a NumPy array
 def to_numpy(pos):
     pos = np.array(pos)
     print(pos.shape)
     pos[:, 0] -= np.min(pos[:, 0])
     pos[:, 1] -= np.min(pos[:, 1])
-    dense = np.zeros((np.max(pos[:, 1]) + 1, np.max(pos[:, 0]) + 1))
+    result = np.zeros((np.max(pos[:, 1]) + 1, np.max(pos[:, 0]) + 1))
     for x, y in pos:
-        dense[y, x] = 1
-    return dense
-
-
-def parse_life_106(file):
-    """
-     Parse a Life 1.06 file, returning a tuple:
-        positions: list of (x,y) co-ordinates
-        comments: all comments in file, as a list of strings, one per line
-    """
-    lines = file.split("\n")
-    comments = []
-    positions = []
-
-    pattern_106 = r"\s*\-?[0-9]+\s+\-?[0-9]+\s*"
-    for line in lines:
-        line = line.strip().rstrip()
-
-        if line.startswith("#"):
-            # strip out comments
-            if line[1] in "CcDdnN":
-                comments.append(line[2:])
-        else:
-
-            if re.match(pattern_106, line):
-                try:
-                    x, y = [int(p) for p in line.split()]
-                    positions.append((x, y))
-                except:
-                    pass
-    comments = "\n".join(comments)
-    return positions, comments
-
+        result[y, x] = 1
+    return result
 
 def to_rle(pts):
-    """Convert a point list to RLE format. 
+    """Convert a point list to RLE format.
     Returns:
         tuple (rle, (width, height))
-        rle: the RLE string, 
+        rle: the RLE string,
         width, height: bounds of the pattern """
     # sort by x, then y
     pts.sort(key=lambda x: x[0])
@@ -205,11 +174,39 @@ def parse_life_105(file):
 
     return positions, comments
 
+def parse_life_106(file):
+    """
+     Parse a Life 1.06 file, returning a tuple:
+        positions: list of (x,y) co-ordinates
+        comments: all comments in file, as a list of strings, one per line
+    """
+    lines = file.split("\n")
+    comments = []
+    positions = []
+
+    pattern_106 = r"\s*\-?[0-9]+\s+\-?[0-9]+\s*"
+    for line in lines:
+        line = line.strip().rstrip()
+
+        if line.startswith("#"):
+            # strip out comments
+            if line[1] in "CcDdnN":
+                comments.append(line[2:])
+        else:
+
+            if re.match(pattern_106, line):
+                try:
+                    x, y = [int(p) for p in line.split()]
+                    positions.append((x, y))
+                except:
+                    pass
+    comments = "\n".join(comments)
+    return positions, comments
 
 def parse_dblife(file):
     """Parse an DBLife file, returning a tuple:
         positions: list of (x,y) co-ordinates
-        comments: all comments in file, as a list of strings, one per line.    
+        comments: all comments in file, as a list of strings, one per line.
     """
     lines = file.split("\n")
     comments = []

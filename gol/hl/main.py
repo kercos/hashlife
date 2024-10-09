@@ -10,8 +10,8 @@ import os
 
 # run the breeder forward many generations
 def load_lif(fname):
-    pat, comments = autoguess_life_file(fname)
-    return construct(pat)
+    pat_tuples, comments = autoguess_life_file(fname)
+    return construct(pat_tuples)
 
 def ffwd_log(inputfile):
     init_t = time.perf_counter()
