@@ -10,17 +10,17 @@ from gol.hl.hashlife import (
 from gol.hl.render import render_img
 import matplotlib.pyplot as plt
 
-def get_base16_board_nb_rule():
+def get_base_board_nb_rule(shape_x):
     board, neighborhood, rule = init_gol_board_nb_rule(
-        shape_x = 16,
+        shape_x = shape_x,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
         seed = 123,
     )
     return board, neighborhood, rule
 
-def make_base_file(filepath):
-    board, neighborhood, rule = get_base16_board_nb_rule()
+def make_base_file(shape_x, filepath):
+    board, neighborhood, rule = get_base_board_nb_rule(shape_x)
     filepath = filepath
     numpy_to_life_106(board, filepath)
 
@@ -49,10 +49,10 @@ def test_render(filepath):
     print(successor.cache_info())
     print(join.cache_info())
 
-def test_animate(expand = None, interval_ms=0):
+def test_base_animate(shape_x, expand = None, interval_ms=0):
     from gol.pure.main import Automata
     import numpy as np
-    board, neighborhood, rule = get_base16_board_nb_rule()
+    board, neighborhood, rule = get_base_board_nb_rule(shape_x)
     if expand:
         pad_before_after = expand
         board = np.pad(board, pad_before_after)
@@ -66,10 +66,24 @@ def test_animate(expand = None, interval_ms=0):
     )
     automata.animate(interval_ms) #ms
 
-if __name__ == "__main__":
+def main_base16():
+    shape_x = 16
     base16_filepath = 'output/base16.LIFE'
-    # make_base_file(base16_filepath)
-    # test_ffw(base16_filepath)
-    # test_render(base16_filepath)
-    # test_animate()
-    # test_animate(expand = 20, interval_ms=0)
+    make_base_file(shape_x, base16_filepath)
+    test_ffw(base16_filepath)
+    test_render(base16_filepath)
+    # test_base_animate(shape_x=16)
+    test_base_animate(shape_x=16, expand=20, interval_ms=0)
+
+def main_base1k():
+    shape_x = 1024
+    base1k_filepath = 'output/base1k.LIFE'
+    make_base_file(shape_x, base1k_filepath)
+    test_ffw(base1k_filepath) # stuck in ffw
+    # test_render(base1k_filepath)
+    # test_base_animate(shape_x)
+    # test_base_animate(shape_x=16, expand=20, interval_ms=0)
+
+if __name__ == "__main__":
+    main_base16()
+    # main_base1k()

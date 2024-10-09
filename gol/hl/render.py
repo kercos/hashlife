@@ -12,5 +12,6 @@ def render_img(pts):
         grays[int(y), int(x)] = g
 
     plt.figure(figsize=(20, 20))
-    plt.imshow(grays, cmap="bone")
     plt.axis("off")
+
+    plt.imshow(grays, cmap="bone")
