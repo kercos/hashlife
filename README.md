@@ -19,6 +19,7 @@
   - `python -m gol.hl.main`
 
 ## See also:
+- [ca file formats](http://www.mirekw.com/ca/ca_files_formats.html)
 - [johnhw (hashlife)](https://johnhw.github.io/hashlife/index.md.html) for a full explanation.
 - [SortaSota (julia)](https://rivesunder.github.io/SortaSota/2021/09/27/faster_life_julia.html)
 - [rivesunder (carle)](https://github.com/rivesunder/carle)

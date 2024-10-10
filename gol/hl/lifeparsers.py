@@ -387,7 +387,7 @@ def autoguess_life_file(fname):
 
 def read_rle(fname):
     """Open and parse an RLE file"""
-    f = open(life_fname)
+    f = open(fname)
     positions, comments = parse_rle(f.read())
     f.close()
     return positions, comments

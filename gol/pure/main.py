@@ -1,12 +1,13 @@
 import time
 import numpy as np
 from numpy.fft import fft2 as np_fft2, ifft2 as np_ifft2
-from matplotlib import pyplot, animation
+from matplotlib import pyplot as plt, animation
 import torch
 from torch.fft import fft2 as torch_fft2, ifft2 as torch_ifft2
 import scipy
 from PIL import Image, ImageDraw
 from gol.utils import init_gol_board_nb_rule
+from tqdm import tqdm
 
 class Automata:
     '''
@@ -377,78 +378,102 @@ class Automata:
     '''
     Show grid in real time (rely on numpy for now)
     '''
-    def animate(self, interval=100):
+    def animate(self, interval=100, progress=True):
+
+        if progress:
+            bar = tqdm() # total?
 
         def update_animation(*args):
+            if progress:
+                bar.update()
+
             # update board once (using numpy or torch)
             self.update_board()
+
             # make sure it's numpy array
             board_numpy = self.get_board_numpy()
             self.image.set_array(board_numpy)
             return self.image
 
-        fig = pyplot.figure()
+        fig = plt.figure()
 
         # first frame
-        self.image = pyplot.imshow(
+        self.image = plt.imshow(
             self.get_board_numpy(),
             interpolation="nearest",
-            cmap=pyplot.cm.gray
+            cmap=plt.cm.gray
         )
 
-        ani = animation.FuncAnimation(
+        _ = animation.FuncAnimation(
             fig,
             update_animation,
             interval=interval,
             cache_frame_data=False # or save_count=MAX_FRAMES
         )
-        pyplot.show()
+
+        # this doesn't seem to work
+        # plt.close('all')
+
+        plt.show()
 
     def get_board_numpy(self):
         if self.use_torch:
             return self.board.cpu().detach().numpy()
         return self.board
 
-    def save_last_frame(self, filename):
+    def save_last_frame(self, filename, grid=False):
 
         # make sure it's numpy array
-        board_numpy = self.get_board_numpy()
+        board_np = self.get_board_numpy()
 
         if filename.endswith('npy'):
-            np.save(filename, board_numpy)
+            np.save(filename, board_np)
         else:
-            wh_src = board_numpy.shape[0] # original width, height
+            wh_src = board_np.shape[0] # original width, height
             px_wh = 50 # pixel width, height
             wh = wh_src * px_wh # final width, height
-            line_color = (255,100,0)
-            board_np = board_numpy.astype(np.uint8)
-            board_np = 255 * np.stack((board_np,) * 3, axis=-1) # RGB
-            img = Image.fromarray(board_np, mode='RGB')
-            img = img.resize((wh, wh), Image.Resampling.BOX)
+
+            # There seem to be issues when using mode 1 with numpy arrays.
+            # see https://stackoverflow.com/questions/32159076/python-pil-bitmap-png-from-array-with-mode-1
+            # board_np = board_np.astype(np.uint8)
+            # img = Image.fromarray(board_np, mode='L').convert('1')
+
+            # gray image
+            board_np = board_np.astype(np.uint8) * 255
+            # board_np = 255 * np.stack((board_np,) * 3, axis=-1) # RGB
+            img = Image.fromarray(board_np, mode='L')
+
+            # set size
+            # img = img.resize((wh, wh), Image.Resampling.BOX)
 
             # draw lines
-            draw = ImageDraw.Draw(img)
-            for i in range(1,wh_src):
-                # (0,0) at top-left corner
-                xy = i * px_wh
-                shape_v = [(xy, 0), (xy, wh)]
-                shape_h = [(0, xy), (wh, xy)]
-                draw.line(shape_v, fill=line_color, width=2)
-                draw.line(shape_h, fill=line_color, width=2)
+            if grid:
+                board_np = board_np.astype(np.uint8)
+                line_color = (255,100,0)
+                palette = [(0,0,0), (255,255,255), line_color]
+                img.putpalette(palette)
+                draw = ImageDraw.Draw(img)
+                for i in range(1,wh_src):
+                    # (0,0) at top-left corner
+                    xy = i * px_wh
+                    shape_v = [(xy, 0), (xy, wh)]
+                    shape_h = [(0, xy), (wh, xy)]
+                    draw.line(shape_v, fill=line_color, width=2)
+                    draw.line(shape_h, fill=line_color, width=2)
 
             img.save(filename)
 
     def show_current_frame(self):
         if self.use_torch:
             self.board = self.board.cpu().detach().numpy()
-        self.image = pyplot.imshow(
+        self.image = plt.imshow(
             self.board,
             interpolation="nearest",
-            cmap=pyplot.cm.gray
+            cmap=plt.cm.gray
         )
 
-        pyplot.show()
-        # pyplot.savefig('lastframe.png')
+        plt.show()
+        # plt.savefig('lastframe.png')
 
 
 class Conway(Automata):
@@ -670,7 +695,7 @@ def main():
             #   - torch: works :)
         animate = False, # benchmark if False
         show_last_frame = False, # only applicable for benchmark
-        save_last_frame = False, # '100k.npy'
+        save_last_frame = 'test.png', # '100k.npy'
         use_fft = False, # conv2d (more efficient)
         # torch_device = 'cpu', # torch cpu
         # torch_device = 'cuda', # torch cuda
@@ -693,12 +718,12 @@ if __name__ == "__main__":
     '''
     Reproduce the animation which should look familiar
     '''
-    reproduce_animation()
+    # reproduce_animation()
 
     '''
     The main code
     '''
-    # main()
+    main()
 
     '''
     Test some alternative methods (e.g, sum instead of conv2d)

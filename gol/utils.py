@@ -62,10 +62,10 @@ def numpy_to_life_106(board_np, filepath):
     shape_x, shape_y = board_np.shape
 
     lines = [header]
-    for r in range(shape_y): #rows
-        for c in range(shape_x): # columns
-            if board_np[r,c]:
-                lines.append(f'{r} {c}')
+    for x in range(shape_x): # columns (x)
+        for y in range(shape_y): #rows (y)
+            if board_np[y,x]:
+                lines.append(f'{x} {y}') # x,y
 
     # write to file
     with open(filepath, 'w') as fout:

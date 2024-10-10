@@ -1,71 +1,106 @@
-import os
 import time
+import numpy as np
 from gol.pure.main import init_gol_board_nb_rule
 from gol.utils import numpy_to_life_106
-from gol.hl.lifeparsers import autoguess_life_file
 from gol.hl.hashlife import (
     construct, ffwd, successor, join,
     expand, advance, centre
 )
 from gol.hl.render import render_img
 import matplotlib.pyplot as plt
+from gol.pure.main import Automata
 
-def get_base_board_nb_rule(shape_x):
+
+def generate_base(shape_x, file_life106=None):
     board, neighborhood, rule = init_gol_board_nb_rule(
         shape_x = shape_x,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
         seed = 123,
     )
-    return board, neighborhood, rule
 
-def make_base_file(shape_x, filepath):
-    board, neighborhood, rule = get_base_board_nb_rule(shape_x)
-    filepath = filepath
-    numpy_to_life_106(board, filepath)
+    if file_life106 is not None:
+        numpy_to_life_106(board, file_life106)
 
-def test_ffw(filepath, n=1000):
-    pat_tuples, comments = autoguess_life_file(filepath)
+    # generate tuples (cells x,y coordinate which are 'on')
+    pat_tuples = tuple(
+        (x,y)
+        for x in range(shape_x)
+        for y in range(shape_x)
+        if board[y,x]
+    )
+    # construct pattern
     pat = construct(pat_tuples)
+
+    return pat, board, neighborhood, rule
+
+def test_ffw(pat, n=1000, log=True):
+
     init_t = time.perf_counter()
-    print(ffwd(pat, n))
+    node = ffwd(pat, n)
     t = time.perf_counter() - init_t
-    print(f'Computation took {t*1000.0:.1f} ms')
-    print(successor.cache_info())
-    print(join.cache_info())
 
-def test_advance(filepath, n=1000):
-    pat_tuples, comments = autoguess_life_file(filepath)
-    pat = construct(pat_tuples)
+    print(f'Computation (ffw) took {t*1000.0:.1f} ms')
+
+    if log:
+        # print node info (k, X x Y, population, ...)
+        print(node)
+        print(successor.cache_info())
+        print(join.cache_info())
+
+    return node
+
+def test_advance(pat, n=1000, log=True):
+
     init_t = time.perf_counter()
-    print(advance(pat, n))
+    node = advance(pat, n)
     t = time.perf_counter() - init_t
-    print(f'Computation took {t*1000.0:.1f} ms')
-    print(successor.cache_info())
-    print(join.cache_info())
 
-def test_render(filepath):
-    outputdir = 'output'
-    filename_ext = os.path.basename(filepath)
-    filename, ext = os.path.splitext(filename_ext)
-    pat_tuples, comments = autoguess_life_file(filepath)
-    pat = construct(pat_tuples)
-    init_t = time.perf_counter()
-    for gen in [0,1000]:
+    print(f'Computation (advance) took {t*1000.0:.1f} ms')
+
+    if log:
+        # print node info (k, X x Y, population)
+        print(node)
+        print(successor.cache_info())
+        print(join.cache_info())
+
+    return node
+
+def test_render_hl(pat, filename, gens=(0,1000)):
+    outputdir = 'output/base'
+    # init_t = time.perf_counter()
+    for gen in gens:
         render_img(expand(advance(centre(centre(pat)), gen), level=0))
         plt.savefig(f'{outputdir}/{filename}_{gen}_0.png', bbox_inches='tight')
-    t = time.perf_counter() - init_t
-    print(f'Rendering took {t*1000.0:.1f} ms')
-    print(successor.cache_info())
-    print(join.cache_info())
+    # t = time.perf_counter() - init_t
+    # print(f'Rendering took {t*1000.0:.1f} ms')
 
-def test_base_animate(shape_x, expand = None, interval_ms=0):
-    from gol.pure.main import Automata
-    import numpy as np
-    board, neighborhood, rule = get_base_board_nb_rule(shape_x)
-    if expand:
-        pad_before_after = expand
+def test_render_pure_img(shape_x, filepath, padding = None, iterations=1000):
+    _, board, neighborhood, rule = generate_base(shape_x)
+
+    if padding:
+        pad_before_after = padding
         board = np.pad(board, pad_before_after)
+
+    automata = Automata(
+        board = board,
+        neighborhood = neighborhood,
+        rule = rule,
+        torus = False,
+        use_fft = False,
+        torch_device = 'mps', # numpy
+    )
+    automata.benchmark(iterations)
+    automata.save_last_frame(filepath)
+
+
+def test_render_pure_animate(shape_x, padding = None, interval_ms=0):
+    _, board, neighborhood, rule = generate_base(shape_x)
+
+    if padding:
+        pad_before_after = padding
+        board = np.pad(board, pad_before_after)
+
     automata = Automata(
         board = board,
         neighborhood = neighborhood,
@@ -76,37 +111,50 @@ def test_base_animate(shape_x, expand = None, interval_ms=0):
     )
     automata.animate(interval_ms) #ms
 
-def main_base16():
-    shape_x = 16
-    base16_filepath = 'output/base16.LIFE'
-    make_base_file(shape_x, base16_filepath)
 
-    print('test ffw')
-    test_ffw(base16_filepath)
-    print('test advance')
-    test_advance(base16_filepath)
+def main_base(shape_x=16, method='ffw', render=False, animate=False, log=True):
 
-    test_render(base16_filepath)
-    # test_base_animate(shape_x=16)
-    test_base_animate(shape_x=16, expand=20, interval_ms=0)
+    assert method in ['ffw', 'advance'], \
+        'method must be `ffw` or `advance`'
 
-def main_base1k():
-    shape_x = 1024
-    base1k_filepath = 'output/base1k.LIFE'
-    make_base_file(shape_x, base1k_filepath)
+    filename = f'base{shape_x}'
+    base_life106_filepath = f'output/base/{filename}.LIFE'
+    pat, board, neighborhood, rule = generate_base(shape_x, base_life106_filepath)
 
-    print('test ffw')
-    test_ffw(base1k_filepath)
-    # TODO: gets stuck in ffw (successor)
+    if method == 'ffw':
+        print(f'test {shape_x} ffw')
+        node, gens = test_ffw(pat, log=log)
+        # TODO: gets stuck for shape_x=1024 in ffw (successor)
+    else:
+        assert method == 'advance'
+        print(f'test {shape_x} advance')
+        node = test_advance(pat, log=log)
+        # TODO: gets stuck for shape_x=1024 in ffw (successor)
+        new_shape_x = 2 ** node.k
+        padding = (new_shape_x - shape_x) // 2 # before/after
+        print('node k:', node.k, 'padding:', padding, 'new_shape:', new_shape_x)
+        if render:
+            iterations = 1000
+            png_last = f'output/base/{filename}_{iterations}_pure.png'
+            test_render_pure_img(shape_x, png_last, padding=padding, iterations=iterations)
 
-    # print('test advance')
-    # test_advance(base1k_filepath, n=10)
-    # TODO: gets stuck in advance (successor)
+    if render:
+        test_render_hl(pat, f'{filename}_{method}')
 
-    # test_render(base1k_filepath)
-    # test_base_animate(shape_x)
-    # test_base_animate(shape_x=16, expand=20, interval_ms=0)
+    if animate:
+        test_render_pure_animate(shape_x=shape_x, padding=0, interval_ms=0)
 
 if __name__ == "__main__":
-    main_base16()
-    # main_base1k() # TODO: gets stuck in ffw/advance (successor)
+
+    # works ok
+    # for method in ['ffw','advance']:
+    # for method in ['ffw']:
+    for method in ['advance']:
+        main_base(
+            shape_x=128,
+            method=method,
+            render=True,
+            animate=False,
+            log=False
+        )
+
