@@ -1,6 +1,6 @@
 import time
 import numpy as np
-from gol.pure.main import init_gol_board_nb_rule
+from gol.utils import init_gol_board_neighborhood_rule
 from gol.utils import numpy_to_life_106
 from gol.hl.hashlife import (
     construct, ffwd, successor, join,
@@ -8,11 +8,11 @@ from gol.hl.hashlife import (
 )
 from gol.hl.render import render_img
 import matplotlib.pyplot as plt
-from gol.pure.main import Automata
+from gol.pure.automata import Automata
 
 
-def generate_base(shape_x, file_life106=None):
-    board, neighborhood, rule = init_gol_board_nb_rule(
+def generate_hl_base(shape_x, file_life106=None):
+    board, neighborhood, rule = init_gol_board_neighborhood_rule(
         shape_x = shape_x,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
@@ -76,7 +76,7 @@ def test_render_hl(pat, filename, gens=(0,1000)):
     # print(f'Rendering took {t*1000.0:.1f} ms')
 
 def test_render_pure_img(shape_x, filepath, padding = None, iterations=1000):
-    _, board, neighborhood, rule = generate_base(shape_x)
+    _, board, neighborhood, rule = generate_hl_base(shape_x)
 
     if padding:
         pad_before_after = padding
@@ -95,7 +95,7 @@ def test_render_pure_img(shape_x, filepath, padding = None, iterations=1000):
 
 
 def test_render_pure_animate(shape_x, padding = None, interval_ms=0):
-    _, board, neighborhood, rule = generate_base(shape_x)
+    _, board, neighborhood, rule = generate_hl_base(shape_x)
 
     if padding:
         pad_before_after = padding
@@ -111,7 +111,6 @@ def test_render_pure_animate(shape_x, padding = None, interval_ms=0):
     )
     automata.animate(interval_ms) #ms
 
-
 def main_base(shape_x=16, method='ffw', render=False, animate=False, log=True):
 
     assert method in ['ffw', 'advance'], \
@@ -119,7 +118,7 @@ def main_base(shape_x=16, method='ffw', render=False, animate=False, log=True):
 
     filename = f'base{shape_x}'
     base_life106_filepath = f'output/base/{filename}.LIFE'
-    pat, board, neighborhood, rule = generate_base(shape_x, base_life106_filepath)
+    pat, board, neighborhood, rule = generate_hl_base(shape_x, base_life106_filepath)
 
     if method == 'ffw':
         print(f'test {shape_x} ffw')

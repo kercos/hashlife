@@ -1,10 +1,10 @@
 import time
-from gol.hl.lifeparsers import autoguess_life_file
-from gol.hl.hashlife import (
+from ca.hl.lifeparsers import autoguess_life_file
+from ca.hl.hashlife import (
     construct, ffwd, successor, join,
     expand, advance, centre
 )
-from gol.hl.render import render_img
+from ca.hl.render import render_img
 import matplotlib.pyplot as plt
 import os
 

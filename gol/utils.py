@@ -1,6 +1,6 @@
 import numpy as np
 
-def init_gol_board_nb_rule(
+def init_gol_board_neighborhood_rule(
         shape_x = 16,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
@@ -76,7 +76,7 @@ def numpy_to_life_106(board_np, filepath):
         fout.writelines(lines_with_return)
 
 if __name__ == "__main__":
-    board, neighborhood, rule = init_gol_board_nb_rule(
+    board, neighborhood, rule = init_gol_board_neighborhood_rule(
         shape_x = 16,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'

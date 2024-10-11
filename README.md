@@ -1,22 +1,38 @@
 # Emergence of Structure in 2D Cellular Automata (Game of Life)
 
+Explore emerging patterns in GoL, something along [these lines](https://softologyblog.wordpress.com/2019/09/03/automatic-detection-of-interesting-cellular-automata/) - not clear if it has been investigated thoroughly so far.
+
+## Run the code
+- main (pure)
+  ```
+  python -m gol.main
+  ```
+- benchmark (pure)
+  ```
+  python -m gol.benchmark
+  ```
+- main (hl)
+  ```
+  python -m gol.hl.main
+  ```
+- main (pure/hl)
+  ```
+  python -m gol.test
+  ```
+
 ## Project Structure
-- `pure`: standard implementation with efficient `numpy`/`pytorch` implementation via `fft` and `conv2d`. See `main.py` initially derived from [njbbaer](https://gist.github.com/njbbaer/4da02e2960636d349e9bae7ae43c213c).
+- `pure`: implementation with efficient `numpy`/`pytorch` via `fft` and `conv2d` derived from [njbbaer](https://gist.github.com/njbbaer/4da02e2960636d349e9bae7ae43c213c).
 - `hl`: hashlife from [johnhw](https://github.com/johnhw/hashlife).
-- `moritztng`: https://github.com/moritztng/cellular
+- `moritztng`: copy of [moritztng](https://github.com/moritztng/cellular) (2d conv and web visualizer)
 
 ## input/output dirs (gitignored)
 - `input`
   - `hl_imgs` (hl)
   - `hl_lifep` (hl)
 - `output`
-  - `manual`: manual tests for `pure` (4x4)
-
-## run the code
-- pure
-  - `python -m gol.pure.main`
-- hl
-  - `python -m gol.hl.main`
+  - `manual`: manual tests for `pure`
+  - `base`: output for `test` (pure/hl)
+  - `hl_imgs`: output fro hl
 
 ## See also:
 - [ca file formats](http://www.mirekw.com/ca/ca_files_formats.html)
@@ -26,3 +42,6 @@
 
 ## TODO
 - see `moritztng` (or remove if not relevant)
+
+## CONTACTS
+[@kercos](https://t.me/kercos)
