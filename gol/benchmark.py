@@ -18,6 +18,7 @@ from gol.main import main_gol
 
 def benchmark():
     # CONWAY GAME OF LIFE
+    # see Automata.benchmark
     main_gol(
         shape_x = 2**10, # 2**10 == 1024,
         initial_state = 'random', # 'square', 'filenmae.npy'

@@ -1,14 +1,18 @@
 import time
 import numpy as np
-from gol.utils import init_gol_board_neighborhood_rule
-from gol.utils import numpy_to_life_106
+import matplotlib.pyplot as plt
+from gol.pure.automata import Automata
+from gol.utils import (
+    init_gol_board_neighborhood_rule,
+    render_pure_img,
+    render_pure_animation,
+    numpy_to_life_106
+)
 from gol.hl.hashlife import (
     construct, ffwd, successor, join,
     expand, advance, centre
 )
 from gol.hl.render import render_img
-import matplotlib.pyplot as plt
-from gol.pure.automata import Automata
 
 
 def generate_hl_base(shape_x, file_life106=None):
@@ -29,18 +33,21 @@ def generate_hl_base(shape_x, file_life106=None):
         for y in range(shape_x)
         if board[y,x]
     )
+
     # construct pattern
+    init_t = time.process_time()
     pat = construct(pat_tuples)
+    t = time.process_time() - init_t
+    print(f'Computation (hl-construct) took {t*1000.0:.1f} ms')
 
     return pat, board, neighborhood, rule
 
 def test_ffw(pat, iterations, log=True):
 
-    init_t = time.perf_counter()
+    init_t = time.process_time()
     node = ffwd(pat, iterations)
-    t = time.perf_counter() - init_t
-
-    print(f'Computation (ffw) took {t*1000.0:.1f} ms')
+    t = time.process_time() - init_t
+    print(f'Computation (hl-ffw) took {t*1000.0:.1f} ms')
 
     if log:
         # print node info (k, X x Y, population, ...)
@@ -52,11 +59,11 @@ def test_ffw(pat, iterations, log=True):
 
 def test_advance(pat, iterations, log=True):
 
-    init_t = time.perf_counter()
+    init_t = time.process_time()
     node = advance(pat, iterations)
-    t = time.perf_counter() - init_t
+    t = time.process_time() - init_t
 
-    print(f'Computation (advance) took {t*1000.0:.1f} ms')
+    print(f'Computation (hl-advance) took {t*1000.0:.1f} ms')
 
     if log:
         # print node info (k, X x Y, population)
@@ -75,55 +82,14 @@ def test_render_hl(pat, filename, iterations):
         plt.savefig(filepath, bbox_inches='tight')
         print('See `hl` img:', filepath)
 
-def test_render_pure_img(shape_x, filepath, iterations, padding = None):
-    # get base
-    _, board, neighborhood, rule = generate_hl_base(shape_x)
-
-    # adjust padding
-    if padding:
-        pad_before_after = padding
-        board = np.pad(board, pad_before_after)
-
-    automata = Automata(
-        board = board,
-        neighborhood = neighborhood,
-        rule = rule,
-        torus = False,
-        use_fft = False,
-        torch_device = 'mps', # numpy
-    )
-    automata.benchmark(iterations)
-    automata.save_last_frame(filepath)
-
-    print('See `pure` img:', filepath)
-
-
-def test_render_pure_animate(shape_x, padding = None, interval_ms=0):
-    # get base
-    _, board, neighborhood, rule = generate_hl_base(shape_x)
-
-    # adjust padding
-    if padding:
-        pad_before_after = padding
-        board = np.pad(board, pad_before_after)
-
-    automata = Automata(
-        board = board,
-        neighborhood = neighborhood,
-        rule = rule,
-        torus = True,
-        use_fft = False,
-        torch_device = None, # numpy
-    )
-    automata.animate(interval_ms) #ms
-
 def main(
-        shape_x=16,
-        method='ffw',
+        shape_x = 16,
+        method = 'ffw',
         iterations = 1000,
-        render=False,
-        animate=False,
-        log=True):
+        render = False,
+        animate = False,
+        torch_device = None,
+        log = True):
 
     assert method in ['ffw', 'advance'], \
         'method must be `ffw` or `advance`'
@@ -145,19 +111,25 @@ def main(
         print(f'test {shape_x} advance')
         node = test_advance(pat, iterations, log=log)
         # TODO: gets stuck for shape_x=1024 in ffw (successor)
-        new_shape_x = 2 ** node.k
+        new_shape_x = 2 ** (node.k-1)
         padding = (new_shape_x - shape_x) // 2 # before/after
         print('node k:', node.k, 'padding:', padding, 'new_shape:', new_shape_x)
         if render:
             png_last = f'output/base/{filename}_{iterations}_pure.png'
-            test_render_pure_img(
-                shape_x,
+            render_pure_img(
+                board, neighborhood, rule,
                 png_last,
                 iterations=iterations,
-                padding=padding
+                padding=padding,
+                torch_device=torch_device
             )
         if animate:
-            test_render_pure_animate(shape_x=shape_x, padding=padding, interval_ms=0)
+            render_pure_animation(
+                board, neighborhood, rule,
+                padding=padding,
+                interval_ms=0,
+                torch_device=torch_device
+            )
 
 if __name__ == "__main__":
 
@@ -168,9 +140,10 @@ if __name__ == "__main__":
         main(
             shape_x=128,
             method=method,
-            iterations = 100,
+            iterations = 50,
             render=True,
             animate=True,
+            torch_device = 'mps', # use Numpy if None
             log=False
         )
 

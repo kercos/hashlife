@@ -344,7 +344,8 @@ class Automata:
     Main Benchmark to run it as fast as possible (without visualizing it)
     '''
     def benchmark(self, iterations):
-        start = time.process_time() # TODO: change to pytorch profiler
+        # TODO: change to perf_counter() or pytorch profiler ?
+        start = time.process_time()
 
         if self.use_torch:
             for _ in range(iterations):
@@ -354,7 +355,8 @@ class Automata:
             for _ in range(iterations):
                 self.np_update_board()
 
-        ellapsed = time.process_time() - start # TODO: change to pytorch profiler
+        # TODO: change to perf_counter() or pytorch profiler ?
+        ellapsed = time.process_time() - start
 
         hz = iterations / ellapsed
 
