@@ -77,11 +77,13 @@ def render_pure_img(
     automata.benchmark(iterations)
     automata.save_last_frame(filepath)
 
-    print('See `pure` img:', filepath)
+    print('--> `pure` img:', filepath)
 
 def render_pure_animation(
         board, neighborhood, rule,
-        padding = None, interval_ms=0,
+        padding = None,
+        name = 'animation',
+        interval_ms=0,
         torch_device=None):
 
     # adjust padding
@@ -97,7 +99,7 @@ def render_pure_animation(
         use_fft = False,
         torch_device = torch_device,
     )
-    automata.animate(interval_ms) #ms
+    automata.animate(name=name, interval=interval_ms)
 
 # Convert a (dense) NumPy array to list of (x,y) positions in life 1.06
 def numpy_to_life_106(board_np, filepath):

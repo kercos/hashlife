@@ -379,7 +379,7 @@ class Automata:
     '''
     Show grid in real time (rely on numpy for now)
     '''
-    def animate(self, interval=0, progress=True):
+    def animate(self, name='animation', interval=0, progress=True):
 
         self.animate_iter = 0
 
@@ -402,7 +402,7 @@ class Automata:
             self.image.set_array(board_numpy)
             return self.image
 
-        fig = plt.figure()
+        fig = plt.figure(name)
 
         # first frame
         self.image = plt.imshow(

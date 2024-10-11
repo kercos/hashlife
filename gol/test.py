@@ -42,7 +42,7 @@ def generate_hl_base(shape_x, file_life106=None):
 
     return pat, board, neighborhood, rule
 
-def test_ffw(pat, iterations, log=True):
+def compute_hl_ffw(pat, iterations, log=True):
 
     init_t = time.process_time()
     node = ffwd(pat, iterations)
@@ -57,7 +57,7 @@ def test_ffw(pat, iterations, log=True):
 
     return node
 
-def test_advance(pat, iterations, log=True):
+def compute_hl_advance(pat, iterations, log=True):
 
     init_t = time.process_time()
     node = advance(pat, iterations)
@@ -77,10 +77,11 @@ def test_render_hl(pat, filename, iterations):
     outputdir = 'output/base'
     # also render for t=0
     for gen in [0, iterations]:
-        render_img(expand(advance(centre(centre(pat)), gen), level=0))
-        filepath = f'{outputdir}/{filename}_{gen}_0.png'
-        plt.savefig(filepath, bbox_inches='tight')
-        print('See `hl` img:', filepath)
+        newnode = expand(advance(centre(centre(pat)), gen), level=0)
+        filename_gen_level = f'{filename}_{gen}_0'
+        filepath = f'{outputdir}/{filename_gen_level}.png'
+        render_img(newnode, name=filename_gen_level)
+        print('--> `hl` img:', filepath)
 
 def main(
         shape_x = 16,
@@ -103,42 +104,45 @@ def main(
 
 
     if method == 'ffw':
-        print(f'test {shape_x} ffw')
-        node, gens = test_ffw(pat, iterations, log=log)
-        # TODO: gets stuck for shape_x=1024 in ffw (successor)
+        print(f'base {shape_x} ffw')
+        node, gens = compute_hl_ffw(pat, iterations, log=log)
+        if render or animate:
+            print('<info> Rebuilding node with compute_hl_advance for render/animate')
+            node = compute_hl_advance(pat, iterations, log=False)
     else:
         assert method == 'advance'
-        print(f'test {shape_x} advance')
-        node = test_advance(pat, iterations, log=log)
-        # TODO: gets stuck for shape_x=1024 in ffw (successor)
-        new_shape_x = 2 ** (node.k-1)
-        padding = (new_shape_x - shape_x) // 2 # before/after
-        print('node k:', node.k, 'padding:', padding, 'new_shape:', new_shape_x)
-        if render:
-            png_last = f'output/base/{filename}_{iterations}_pure.png'
-            render_pure_img(
-                board, neighborhood, rule,
-                png_last,
-                iterations=iterations,
-                padding=padding,
-                torch_device=torch_device
-            )
-        if animate:
-            render_pure_animation(
-                board, neighborhood, rule,
-                padding=padding,
-                interval_ms=0,
-                torch_device=torch_device
-            )
+        print(f'base {shape_x} advance')
+        node = compute_hl_advance(pat, iterations, log=log)
+
+    new_shape_x = 2 ** (node.k-1)
+    padding = (new_shape_x - shape_x) // 2 # before/after
+    print('node k:', node.k, 'padding:', padding, 'new_shape:', new_shape_x)
+
+    if render:
+        png_last = f'output/base/{filename}_{iterations}_pure.png'
+        render_pure_img(
+            board, neighborhood, rule,
+            png_last,
+            iterations=iterations,
+            padding=padding,
+            torch_device=torch_device
+        )
+    if animate:
+        render_pure_animation(
+            board, neighborhood, rule,
+            padding=padding,
+            name=f'{filename} 0 - {iterations}',
+            interval_ms=0,
+            torch_device=torch_device
+        )
 
 if __name__ == "__main__":
 
-    # works ok
     # for method in ['ffw','advance']:
     # for method in ['ffw']:
     for method in ['advance']:
         main(
-            shape_x=128,
+            shape_x=128, # TODO: hl gets stuck for shape_x=1024 in successor
             method=method,
             iterations = 50,
             render=True,
