@@ -34,10 +34,10 @@ def generate_hl_base(shape_x, file_life106=None):
 
     return pat, board, neighborhood, rule
 
-def test_ffw(pat, n=1000, log=True):
+def test_ffw(pat, iterations, log=True):
 
     init_t = time.perf_counter()
-    node = ffwd(pat, n)
+    node = ffwd(pat, iterations)
     t = time.perf_counter() - init_t
 
     print(f'Computation (ffw) took {t*1000.0:.1f} ms')
@@ -50,10 +50,10 @@ def test_ffw(pat, n=1000, log=True):
 
     return node
 
-def test_advance(pat, n=1000, log=True):
+def test_advance(pat, iterations, log=True):
 
     init_t = time.perf_counter()
-    node = advance(pat, n)
+    node = advance(pat, iterations)
     t = time.perf_counter() - init_t
 
     print(f'Computation (advance) took {t*1000.0:.1f} ms')
@@ -66,18 +66,20 @@ def test_advance(pat, n=1000, log=True):
 
     return node
 
-def test_render_hl(pat, filename, gens=(0,1000)):
+def test_render_hl(pat, filename, iterations):
     outputdir = 'output/base'
-    # init_t = time.perf_counter()
-    for gen in gens:
+    # also render for t=0
+    for gen in [0, iterations]:
         render_img(expand(advance(centre(centre(pat)), gen), level=0))
-        plt.savefig(f'{outputdir}/{filename}_{gen}_0.png', bbox_inches='tight')
-    # t = time.perf_counter() - init_t
-    # print(f'Rendering took {t*1000.0:.1f} ms')
+        filepath = f'{outputdir}/{filename}_{gen}_0.png'
+        plt.savefig(filepath, bbox_inches='tight')
+        print('See `hl` img:', filepath)
 
-def test_render_pure_img(shape_x, filepath, padding = None, iterations=1000):
+def test_render_pure_img(shape_x, filepath, iterations, padding = None):
+    # get base
     _, board, neighborhood, rule = generate_hl_base(shape_x)
 
+    # adjust padding
     if padding:
         pad_before_after = padding
         board = np.pad(board, pad_before_after)
@@ -93,10 +95,14 @@ def test_render_pure_img(shape_x, filepath, padding = None, iterations=1000):
     automata.benchmark(iterations)
     automata.save_last_frame(filepath)
 
+    print('See `pure` img:', filepath)
+
 
 def test_render_pure_animate(shape_x, padding = None, interval_ms=0):
+    # get base
     _, board, neighborhood, rule = generate_hl_base(shape_x)
 
+    # adjust padding
     if padding:
         pad_before_after = padding
         board = np.pad(board, pad_before_after)
@@ -111,7 +117,13 @@ def test_render_pure_animate(shape_x, padding = None, interval_ms=0):
     )
     automata.animate(interval_ms) #ms
 
-def main_base(shape_x=16, method='ffw', render=False, animate=False, log=True):
+def main(
+        shape_x=16,
+        method='ffw',
+        iterations = 1000,
+        render=False,
+        animate=False,
+        log=True):
 
     assert method in ['ffw', 'advance'], \
         'method must be `ffw` or `advance`'
@@ -120,28 +132,32 @@ def main_base(shape_x=16, method='ffw', render=False, animate=False, log=True):
     base_life106_filepath = f'output/base/{filename}.LIFE'
     pat, board, neighborhood, rule = generate_hl_base(shape_x, base_life106_filepath)
 
+    if render:
+        test_render_hl(pat, f'{filename}_{method}', iterations)
+
+
     if method == 'ffw':
         print(f'test {shape_x} ffw')
-        node, gens = test_ffw(pat, log=log)
+        node, gens = test_ffw(pat, iterations, log=log)
         # TODO: gets stuck for shape_x=1024 in ffw (successor)
     else:
         assert method == 'advance'
         print(f'test {shape_x} advance')
-        node = test_advance(pat, log=log)
+        node = test_advance(pat, iterations, log=log)
         # TODO: gets stuck for shape_x=1024 in ffw (successor)
         new_shape_x = 2 ** node.k
         padding = (new_shape_x - shape_x) // 2 # before/after
         print('node k:', node.k, 'padding:', padding, 'new_shape:', new_shape_x)
         if render:
-            iterations = 1000
             png_last = f'output/base/{filename}_{iterations}_pure.png'
-            test_render_pure_img(shape_x, png_last, padding=padding, iterations=iterations)
-
-    if render:
-        test_render_hl(pat, f'{filename}_{method}')
-
-    if animate:
-        test_render_pure_animate(shape_x=shape_x, padding=0, interval_ms=0)
+            test_render_pure_img(
+                shape_x,
+                png_last,
+                iterations=iterations,
+                padding=padding
+            )
+        if animate:
+            test_render_pure_animate(shape_x=shape_x, padding=padding, interval_ms=0)
 
 if __name__ == "__main__":
 
@@ -149,11 +165,12 @@ if __name__ == "__main__":
     # for method in ['ffw','advance']:
     # for method in ['ffw']:
     for method in ['advance']:
-        main_base(
+        main(
             shape_x=128,
             method=method,
+            iterations = 100,
             render=True,
-            animate=False,
+            animate=True,
             log=False
         )
 

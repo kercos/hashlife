@@ -377,12 +377,18 @@ class Automata:
     '''
     Show grid in real time (rely on numpy for now)
     '''
-    def animate(self, interval=100, progress=True):
+    def animate(self, interval=0, progress=True):
+
+        self.animate_iter = 0
 
         if progress:
             bar = tqdm() # total?
 
         def update_animation(*args):
+            if self.animate_iter == 100:
+                return None
+            self.animate_iter += 1
+
             if progress:
                 bar.update()
 
@@ -406,7 +412,7 @@ class Automata:
         _ = animation.FuncAnimation(
             fig,
             update_animation,
-            interval=interval,
+            interval=interval, # ms
             cache_frame_data=False # or save_count=MAX_FRAMES
         )
 
