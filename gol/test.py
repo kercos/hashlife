@@ -43,12 +43,12 @@ def generate_hl_base(shape_x, file_life106=None):
 
     return node, board, neighborhood, rule
 
-def compute_hl_ffw(node, giant_leaps, log=True):
+def compute_hl_ffwd(node, giant_leaps, log=True):
 
     init_t = time.process_time()
     node, gens = ffwd(node, giant_leaps)
     t = time.process_time() - init_t
-    print(f'Computation (hl-ffw) took {t*1000.0:.1f} ms')
+    print(f'Computation (hl-ffwd) took {t*1000.0:.1f} ms')
 
     if log:
         # print node info (k, X x Y, population, ...)
@@ -88,7 +88,7 @@ def render_hl(node, filename, show=True):
 
 def main(
         shape_x = 16,
-        method = 'ffw',
+        method = 'ffwd',
         giant_leaps = None,
         iterations = None,
         render = False,
@@ -98,15 +98,15 @@ def main(
 
     assert giant_leaps is not None or iterations is not None
 
-    assert method in ['ffw', 'advance'], \
-        'method must be `ffw` or `advance`'
+    assert method in ['ffwd', 'advance'], \
+        'method must be `ffwd` or `advance`'
 
     filename = f'base{shape_x}'
     base_life106_filepath = f'{outputdir}/{filename}.LIFE'
     node, board, neighborhood, rule = generate_hl_base(shape_x, base_life106_filepath)
 
     if render:
-        show_first = True # True if you want to show the first gen
+        show_first = False # True if you want to show the first gen
         render_hl(node, f'{filename}_0_hl_{method}', show=show_first)
         render_pure_img(
             board, neighborhood, rule,
@@ -119,10 +119,10 @@ def main(
         if show_first:
             plt.show() # show both
 
-    if method == 'ffw':
+    if method == 'ffwd':
         assert giant_leaps is not None
-        print(f'base {shape_x} ffw')
-        node, gens = compute_hl_ffw(node, giant_leaps, log=log)
+        print(f'base {shape_x} ffwd')
+        node, gens = compute_hl_ffwd(node, giant_leaps, log=log)
         iterations = gens
     else:
         assert method == 'advance'
@@ -159,9 +159,8 @@ def main(
 
 if __name__ == "__main__":
 
-    # for method in ['ffw','advance']:
-    # for method in ['ffw']:
-    for method in ['advance']:
+    for method in ['ffwd','advance']:
+        print('-----------------')
         main(
             shape_x=128, # TODO: hl gets stuck for shape_x=1024 in successor
             method=method,
@@ -172,4 +171,5 @@ if __name__ == "__main__":
             torch_device = 'mps', # use Numpy if None
             log=True
         )
+        print()
 
