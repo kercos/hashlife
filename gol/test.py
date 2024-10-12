@@ -10,7 +10,7 @@ from gol.utils import (
 )
 from gol.hl.hashlife import (
     construct, ffwd, successor, join,
-    expand, advance, centre
+    expand, advance, centre, inner
 )
 from gol.hl.render import render_img
 
@@ -88,7 +88,6 @@ def render_hl(node, filename, show=True):
 
 def main(
         shape_x = 16,
-        method = 'ffwd',
         giant_leaps = None,
         iterations = None,
         render = False,
@@ -98,16 +97,13 @@ def main(
 
     assert giant_leaps is not None or iterations is not None
 
-    assert method in ['ffwd', 'advance'], \
-        'method must be `ffwd` or `advance`'
-
     filename = f'base{shape_x}'
     base_life106_filepath = f'{outputdir}/{filename}.LIFE'
     node, board, neighborhood, rule = generate_hl_base(shape_x, base_life106_filepath)
 
     if render:
         show_first = False # True if you want to show the first gen
-        render_hl(node, f'{filename}_0_hl_{method}', show=show_first)
+        render_hl(node, f'{filename}_0_hl', show=show_first)
         render_pure_img(
             board, neighborhood, rule,
             iterations=0,
@@ -119,16 +115,23 @@ def main(
         if show_first:
             plt.show() # show both
 
-    if method == 'ffwd':
+    # hl-ffwd
         assert giant_leaps is not None
         print(f'base {shape_x} ffwd')
-        node, gens = compute_hl_ffwd(node, giant_leaps, log=log)
+        node_ffwd, gens = compute_hl_ffwd(node, giant_leaps, log=log)
         iterations = gens
-    else:
-        assert method == 'advance'
+    # hl-advance
         assert iterations is not None
         print(f'base {shape_x} advance')
-        node = compute_hl_advance(node, iterations, log=log)
+        node_advance = compute_hl_advance(node, iterations, log=log)
+
+    if node_advance.k != node_ffwd.k:
+        print('<info> Reducing k for advance with `inner`')
+        node_advance = inner(node_advance)
+
+    assert node_ffwd.equals(node_advance)
+
+    node = node_ffwd # same as node_advance
 
     if render or animate:
         # prepare padding for pure rendering
@@ -137,7 +140,7 @@ def main(
         print('node k:', node.k, 'padding:', padding, 'new_shape:', new_shape_x)
 
         if render:
-            render_hl(node, f'{filename}_{iterations}_hl_{method}', show=True)
+            render_hl(node, f'{filename}_{iterations}_hl', show=True)
             render_pure_img(
                 board, neighborhood, rule,
                 iterations=iterations,
@@ -159,17 +162,15 @@ def main(
 
 if __name__ == "__main__":
 
-    for method in ['ffwd','advance']:
-        print('-----------------')
-        main(
-            shape_x=128, # TODO: hl gets stuck for shape_x=1024 in successor
-            method=method,
-            giant_leaps = 2, # ffwd
-            iterations = 384, # advance (same as 2 gian leaps for base128)
-            render=True,
-            animate=False,
-            torch_device = 'mps', # use Numpy if None
-            log=True
-        )
-        print()
+    # NOTE: hl gets stuck for shape_x=1024 in successor
+
+    main(
+        shape_x=128,
+        giant_leaps = 2, # ffwd
+        iterations = 384, # advance (same as 2 gian leaps for base128)
+        render=True,
+        animate=False,
+        torch_device = 'mps', # use Numpy if None
+        log=True
+    )
 
