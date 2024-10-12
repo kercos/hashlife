@@ -84,9 +84,11 @@ def render_pure_img(
 
     if show:
         name = os.path.splitext(os.path.basename(filepath))[0]
-        automata.show_current_frame(name)
+        automata.show_current_frame(name, force_show=False)
+        # need to trigger plt.show() outside
 
     print('--> `pure` img:', filepath)
+    return automata
 
 def render_pure_animation(
         board, neighborhood, rule,

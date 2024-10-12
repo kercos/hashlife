@@ -458,6 +458,7 @@ class Automata:
             # img = img.resize((wh, wh), Image.Resampling.BOX)
 
             # draw lines
+            # TODO: fix me
             if grid:
                 board_np = board_np.astype(np.uint8)
                 line_color = (255,100,0)

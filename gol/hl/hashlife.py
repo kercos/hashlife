@@ -1,6 +1,8 @@
 from collections import namedtuple
 from functools import lru_cache
 from collections import Counter
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def baseline_life(pts):
@@ -212,6 +214,44 @@ def expand(node, x=0, y=0, clip=None, level=0):
             + expand(node.c, x, y + offset, clip, level)
             + expand(node.d, x + offset, y + offset, clip, level)
         )
+
+def render_img(node, crop=False, name=None, filepath=None, show=True, force_show=True):
+    """
+    Utility to show a point collection as an image in Matplotlib
+    """
+    pts = expand(node) # triplets with points and gray values (only > 0)
+    pts = np.array(pts)
+    pts[:, 0] -= np.min(pts[:, 0])
+    pts[:, 1] -= np.min(pts[:, 1])
+    if crop:
+        max_x = int(np.max(pts[:, 0] + 1))
+        max_y = int(np.max(pts[:, 1] + 1))
+        grays = np.zeros((max_y, max_x))
+    else:
+        size = 2 ** node.k
+        grays = np.zeros((size,size))
+
+    for x, y, g in pts:
+        grays[int(y), int(x)] = g
+
+    if filepath:
+        fig = plt.figure()
+        # plt.imshow(grays, cmap="bone")
+        plt.imshow(
+            grays,
+            interpolation="nearest",
+            cmap=plt.cm.gray
+        )
+        plt.axis("off")
+        plt.savefig(filepath, bbox_inches='tight')
+        plt.close(fig) # so it's not shown
+
+    if show:
+        plt.figure(name, figsize=(5, 5))
+        plt.axis("off")
+        plt.imshow(grays, cmap="bone")
+        if force_show:
+            plt.show()
 
 
 def print_node(node):

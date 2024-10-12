@@ -10,9 +10,9 @@ from gol.utils import (
 )
 from gol.hl.hashlife import (
     construct, ffwd, successor, join,
-    expand, advance, centre, inner
+    expand, advance, centre, inner,
+    render_img
 )
-from gol.hl.render import render_img
 
 outputdir = 'output/base'
 
@@ -77,10 +77,10 @@ def compute_hl_advance(node, iterations, log=True):
 
 def render_hl(node, filename, show=True):
     # newnode = expand(advance(centre(centre(node)), gen), level=0)
-    coordinates = expand(node)
     filepath = f'{outputdir}/{filename}.png'
     render_img(
-        coordinates,
+        node,
+        crop=True, # TODO: fix me and change me to False
         name=filename, filepath=filepath,
         show=show, force_show=False
     )
@@ -100,7 +100,6 @@ def main(
 
     if render:
         show_first = False # True if you want to show the first gen
-        render_hl(node, f'{filename}_0_hl', show=show_first)
         render_pure_img(
             board, neighborhood, rule,
             iterations=0,
@@ -109,6 +108,7 @@ def main(
             show=show_first,
             torch_device=torch_device
         )
+        render_hl(node, f'{filename}_0_hl', show=show_first)
         if show_first:
             plt.show() # show both
 
@@ -131,13 +131,12 @@ def main(
 
     if render or animate:
         # prepare padding for pure rendering
-        new_shape_x = 2 ** node.k # sometime k-1 is ok but not always
-        padding = (new_shape_x - shape_x) // 2 # before/after
-        print('node k:', node.k, 'padding:', padding, 'new_shape:', new_shape_x)
+        new_size_pure = 2 ** node.k # sometime k-1 is ok but not always
+        padding = (new_size_pure - shape_x) // 2 # before/after
+        print('node k:', node.k, 'padding:', padding, 'new_size:', new_size_pure)
 
         if render:
-            render_hl(node, f'{filename}_{iterations}_hl', show=True)
-            render_pure_img(
+            automata = render_pure_img(
                 board, neighborhood, rule,
                 iterations=iterations,
                 filepath=f'{outputdir}/{filename}_{iterations}_pure.png',
@@ -145,6 +144,9 @@ def main(
                 show=True,
                 torch_device=torch_device
             )
+            # pure_bord = automata.board
+            # size = pure_bord.shape[0]
+            render_hl(node, f'{filename}_{iterations}_hl', show=True)
             plt.show() # show both
         if animate:
             render_pure_animation(
