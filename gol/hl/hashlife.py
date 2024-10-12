@@ -33,6 +33,17 @@ class Node:
     def __hash__(self):
         return self.hash
 
+    def equals(self, other):
+        if isinstance(other, Node):
+            return (
+                self.k == other.k and
+                self.a == other.a and
+                self.b == other.b and
+                self.c == other.c and
+                self.d == other.d
+            )
+        return False
+
     def __repr__(self):
         return f"Node k={self.k}, {1<<self.k} x {1<<self.k}, population {self.n}"
 
@@ -71,7 +82,10 @@ def get_zero(k):
 
 
 def centre(m):
-    """Return a node at level `k+1`, which is centered on the given quadtree node."""
+    """
+    Return a node at level `k+1`, which is centered on the given quadtree node.
+    This basically adds a single-cell frame with off cells (perimeter) to the pattern
+    """
     z = get_zero(m.a.k)  # get the right-sized zero node
     return join(
         join(z, z, z, m.a), join(z, z, m.b, z), join(z, m.c, z, z), join(m.d, z, z, z)
@@ -82,7 +96,7 @@ def life(a, b, c, d, E, f, g, h, i):
     """The standard life rule, taking eight neighbours and a centre cell E.
     Returns on if should be on, and off otherwise."""
     outer = sum([t.n for t in [a, b, c, d, f, g, h, i]])
-    return on if (E.n and outer == 2) or outer == 3 else off
+    return on if (E.n and outer == 2) or outer == 3 else off # GoL rule
 
 
 def life_4x4(m):
@@ -105,6 +119,8 @@ def successor(m, j=None):
     """
     Return the 2**k-1 x 2**k-1 successor, 2**j generations in the future,
     where j <= k - 2, caching the result.
+    Therefore for a 8x8 (k=3) successor (k=2), up to 1 generation in the future
+        (TODO: to confirm)
     """
     if m.n == 0:  # empty
         return m.a
@@ -265,6 +281,18 @@ def ffwd(node, n):
         gens += 1 << (node.k - 2)
         node = successor(node)
     return node, gens
+
+def get_gen_for_giant_leaps(k, n):
+    """Get the number of generation equivalent
+    for n giant leaps for a given node of given k
+    See `ffwd` function above (only gens are returned here)
+    TODO: double check
+    """
+    gens = 0
+    for _ in range(n):
+        gens += 1 << (k - 2)
+        k = k + 1 # tricky as this may depend on padding
+    return gens
 
 
 def advance(node, n):
