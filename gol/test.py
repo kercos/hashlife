@@ -54,8 +54,8 @@ def compute_hl_ffw(node, giant_leaps, log=True):
         # print node info (k, X x Y, population, ...)
         print('node:', node)
         print('gens:', gens)
-        print(successor.cache_info())
-        print(join.cache_info())
+        print('successor:', successor.cache_info())
+        print('join:', join.cache_info())
 
     return node, gens
 
@@ -70,8 +70,8 @@ def compute_hl_advance(node, iterations, log=True):
     if log:
         # print node info (k, X x Y, population)
         print('node:', node)
-        print(successor.cache_info())
-        print(join.cache_info())
+        print('successor:', successor.cache_info())
+        print('join:', join.cache_info())
 
     return node
 
@@ -106,16 +106,18 @@ def main(
     node, board, neighborhood, rule = generate_hl_base(shape_x, base_life106_filepath)
 
     if render:
-        render_hl(node, f'{filename}_0_hl_{method}', show=True)
+        show_first = True # True if you want to show the first gen
+        render_hl(node, f'{filename}_0_hl_{method}', show=show_first)
         render_pure_img(
             board, neighborhood, rule,
             iterations=0,
             padding=None,
             filepath=f'{outputdir}/{filename}_0_pure.png',
-            show=True,
+            show=show_first,
             torch_device=torch_device
         )
-        plt.show() # show both
+        if show_first:
+            plt.show() # show both
 
     if method == 'ffw':
         assert giant_leaps is not None
@@ -158,8 +160,8 @@ def main(
 if __name__ == "__main__":
 
     # for method in ['ffw','advance']:
-    for method in ['ffw']:
-    # for method in ['advance']:
+    # for method in ['ffw']:
+    for method in ['advance']:
         main(
             shape_x=128, # TODO: hl gets stuck for shape_x=1024 in successor
             method=method,

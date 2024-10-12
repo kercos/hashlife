@@ -477,6 +477,7 @@ class Automata:
     def show_current_frame(self, name, force_show=True):
         if self.use_torch:
             self.board = self.board.cpu().detach().numpy()
+
         plt.figure(name, figsize=(5, 5))
         plt.imshow(
             self.board,
