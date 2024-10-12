@@ -88,14 +88,11 @@ def render_hl(node, filename, show=True):
 
 def main(
         shape_x = 16,
-        giant_leaps = None,
-        iterations = None,
+        giant_leaps = 1,
         render = False,
         animate = False,
         torch_device = None,
         log = True):
-
-    assert giant_leaps is not None or iterations is not None
 
     filename = f'base{shape_x}'
     base_life106_filepath = f'{outputdir}/{filename}.LIFE'
@@ -116,21 +113,20 @@ def main(
             plt.show() # show both
 
     # hl-ffwd
-        assert giant_leaps is not None
-        print(f'base {shape_x} ffwd')
-        node_ffwd, gens = compute_hl_ffwd(node, giant_leaps, log=log)
-        iterations = gens
+    assert giant_leaps is not None
+    print(f'base {shape_x} ffwd')
+    node_ffwd, gens = compute_hl_ffwd(node, giant_leaps, log=log)
+    iterations = gens # get the generations equivalent to the giant leaps
     # hl-advance
-        assert iterations is not None
-        print(f'base {shape_x} advance')
-        node_advance = compute_hl_advance(node, iterations, log=log)
+    print(f'base {shape_x} advance')
+    node_advance = compute_hl_advance(node, iterations, log=log)
 
     if node_advance.k != node_ffwd.k:
+        # TODO: ask why this is the case
         print('<info> Reducing k for advance with `inner`')
         node_advance = inner(node_advance)
 
     assert node_ffwd.equals(node_advance)
-
     node = node_ffwd # same as node_advance
 
     if render or animate:
@@ -166,8 +162,7 @@ if __name__ == "__main__":
 
     main(
         shape_x=128,
-        giant_leaps = 2, # ffwd
-        iterations = 384, # advance (same as 2 gian leaps for base128)
+        giant_leaps = 2, # ffwd -> advance
         render=True,
         animate=False,
         torch_device = 'mps', # use Numpy if None
