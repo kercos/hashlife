@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from gol.pure.automata import Automata
 
@@ -58,7 +59,8 @@ def init_gol_board_neighborhood_rule(
 
 def render_pure_img(
         board, neighborhood, rule,
-        filepath, iterations, padding = None,
+        iterations=0, padding = None,
+        filepath=None, show=True,
         torch_device=None):
 
     # adjust padding
@@ -74,13 +76,21 @@ def render_pure_img(
         use_fft = False,
         torch_device = torch_device, # numpy
     )
-    automata.benchmark(iterations)
-    automata.save_last_frame(filepath)
+    if iterations > 0:
+        automata.benchmark(iterations)
+
+    if filepath:
+        automata.save_last_frame(filepath)
+
+    if show:
+        name = os.path.splitext(os.path.basename(filepath))[0]
+        automata.show_current_frame(name)
 
     print('--> `pure` img:', filepath)
 
 def render_pure_animation(
         board, neighborhood, rule,
+        iterations,
         padding = None,
         name = 'animation',
         interval_ms=0,
@@ -99,7 +109,7 @@ def render_pure_animation(
         use_fft = False,
         torch_device = torch_device,
     )
-    automata.animate(name=name, interval=interval_ms)
+    automata.animate(name=name, iterations=iterations, interval=interval_ms)
 
 # Convert a (dense) NumPy array to list of (x,y) positions in life 1.06
 def numpy_to_life_106(board_np, filepath):

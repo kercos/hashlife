@@ -379,7 +379,12 @@ class Automata:
     '''
     Show grid in real time (rely on numpy for now)
     '''
-    def animate(self, name='animation', interval=0, progress=True):
+    def animate(
+            self,
+            iterations=None,
+            name='animation',
+            interval=0,
+            progress=True):
 
         self.animate_iter = 0
 
@@ -387,7 +392,7 @@ class Automata:
             bar = tqdm() # total?
 
         def update_animation(*args):
-            if self.animate_iter == 100:
+            if self.animate_iter == iterations:
                 return None
             self.animate_iter += 1
 
@@ -403,6 +408,7 @@ class Automata:
             return self.image
 
         fig = plt.figure(name)
+        plt.axis("off")
 
         # first frame
         self.image = plt.imshow(
@@ -418,9 +424,7 @@ class Automata:
             cache_frame_data=False # or save_count=MAX_FRAMES
         )
 
-        # this doesn't seem to work
-        # plt.close('all')
-
+        # always force show
         plt.show()
 
     def get_board_numpy(self):
@@ -470,14 +474,16 @@ class Automata:
 
             img.save(filename)
 
-    def show_current_frame(self):
+    def show_current_frame(self, name, force_show=True):
         if self.use_torch:
             self.board = self.board.cpu().detach().numpy()
-        self.image = plt.imshow(
+        plt.figure(name, figsize=(5, 5))
+        plt.imshow(
             self.board,
             interpolation="nearest",
             cmap=plt.cm.gray
         )
+        plt.axis("off")
 
-        plt.show()
-        # plt.savefig('lastframe.png')
+        if force_show:
+            plt.show()

@@ -14,6 +14,7 @@ from gol.hl.hashlife import (
 )
 from gol.hl.render import render_img
 
+outputdir = 'output/base'
 
 def generate_hl_base(shape_x, file_life106=None):
     board, neighborhood, rule = init_gol_board_neighborhood_rule(
@@ -36,118 +37,137 @@ def generate_hl_base(shape_x, file_life106=None):
 
     # construct pattern
     init_t = time.process_time()
-    pat = construct(pat_tuples)
+    node = construct(pat_tuples)
     t = time.process_time() - init_t
     print(f'Computation (hl-construct) took {t*1000.0:.1f} ms')
 
-    return pat, board, neighborhood, rule
+    return node, board, neighborhood, rule
 
-def compute_hl_ffw(pat, iterations, log=True):
+def compute_hl_ffw(node, giant_leaps, log=True):
 
     init_t = time.process_time()
-    node = ffwd(pat, iterations)
+    node, gens = ffwd(node, giant_leaps)
     t = time.process_time() - init_t
     print(f'Computation (hl-ffw) took {t*1000.0:.1f} ms')
 
     if log:
         # print node info (k, X x Y, population, ...)
-        print(node)
+        print('node:', node)
+        print('gens:', gens)
         print(successor.cache_info())
         print(join.cache_info())
 
-    return node
+    return node, gens
 
-def compute_hl_advance(pat, iterations, log=True):
+def compute_hl_advance(node, iterations, log=True):
 
     init_t = time.process_time()
-    node = advance(pat, iterations)
+    node = advance(node, iterations)
     t = time.process_time() - init_t
 
     print(f'Computation (hl-advance) took {t*1000.0:.1f} ms')
 
     if log:
         # print node info (k, X x Y, population)
-        print(node)
+        print('node:', node)
         print(successor.cache_info())
         print(join.cache_info())
 
     return node
 
-def test_render_hl(pat, filename, iterations):
-    outputdir = 'output/base'
-    # also render for t=0
-    for gen in [0, iterations]:
-        newnode = expand(advance(centre(centre(pat)), gen), level=0)
-        filename_gen_level = f'{filename}_{gen}_0'
-        filepath = f'{outputdir}/{filename_gen_level}.png'
-        render_img(newnode, name=filename_gen_level)
-        print('--> `hl` img:', filepath)
+def render_hl(node, filename, show=True):
+    # newnode = expand(advance(centre(centre(node)), gen), level=0)
+    coordinates = expand(node)
+    filepath = f'{outputdir}/{filename}.png'
+    render_img(
+        coordinates,
+        name=filename, filepath=filepath,
+        show=show, force_show=False
+    )
+    print('--> `hl` img:', filepath)
 
 def main(
         shape_x = 16,
         method = 'ffw',
-        iterations = 1000,
+        giant_leaps = None,
+        iterations = None,
         render = False,
         animate = False,
         torch_device = None,
         log = True):
 
+    assert giant_leaps is not None or iterations is not None
+
     assert method in ['ffw', 'advance'], \
         'method must be `ffw` or `advance`'
 
     filename = f'base{shape_x}'
-    base_life106_filepath = f'output/base/{filename}.LIFE'
-    pat, board, neighborhood, rule = generate_hl_base(shape_x, base_life106_filepath)
+    base_life106_filepath = f'{outputdir}/{filename}.LIFE'
+    node, board, neighborhood, rule = generate_hl_base(shape_x, base_life106_filepath)
 
     if render:
-        test_render_hl(pat, f'{filename}_{method}', iterations)
-
-
-    if method == 'ffw':
-        print(f'base {shape_x} ffw')
-        node, gens = compute_hl_ffw(pat, iterations, log=log)
-        if render or animate:
-            print('<info> Rebuilding node with compute_hl_advance for render/animate')
-            node = compute_hl_advance(pat, iterations, log=False)
-    else:
-        assert method == 'advance'
-        print(f'base {shape_x} advance')
-        node = compute_hl_advance(pat, iterations, log=log)
-
-    new_shape_x = 2 ** (node.k-1)
-    padding = (new_shape_x - shape_x) // 2 # before/after
-    print('node k:', node.k, 'padding:', padding, 'new_shape:', new_shape_x)
-
-    if render:
-        png_last = f'output/base/{filename}_{iterations}_pure.png'
+        render_hl(node, f'{filename}_0_hl_{method}', show=True)
         render_pure_img(
             board, neighborhood, rule,
-            png_last,
-            iterations=iterations,
-            padding=padding,
+            iterations=0,
+            padding=None,
+            filepath=f'{outputdir}/{filename}_0_pure.png',
+            show=True,
             torch_device=torch_device
         )
-    if animate:
-        render_pure_animation(
-            board, neighborhood, rule,
-            padding=padding,
-            name=f'{filename} 0 - {iterations}',
-            interval_ms=0,
-            torch_device=torch_device
-        )
+        plt.show() # show both
+
+    if method == 'ffw':
+        assert giant_leaps is not None
+        print(f'base {shape_x} ffw')
+        node, gens = compute_hl_ffw(node, giant_leaps, log=log)
+        iterations = gens
+    else:
+        assert method == 'advance'
+        assert iterations is not None
+        print(f'base {shape_x} advance')
+        node = compute_hl_advance(node, iterations, log=log)
+
+    if render or animate:
+        # prepare padding for pure rendering
+        new_shape_x = 2 ** node.k # sometime k-1 is ok but not always
+        padding = (new_shape_x - shape_x) // 2 # before/after
+        print('node k:', node.k, 'padding:', padding, 'new_shape:', new_shape_x)
+
+        if render:
+            render_hl(node, f'{filename}_{iterations}_hl_{method}', show=True)
+            render_pure_img(
+                board, neighborhood, rule,
+                iterations=iterations,
+                filepath=f'{outputdir}/{filename}_{iterations}_pure.png',
+                padding=padding,
+                show=True,
+                torch_device=torch_device
+            )
+            plt.show() # show both
+        if animate:
+            render_pure_animation(
+                board, neighborhood, rule,
+                iterations,
+                padding=padding,
+                name=f'{filename} 0 - {iterations}',
+                interval_ms=0,
+                torch_device=torch_device
+            )
 
 if __name__ == "__main__":
 
     # for method in ['ffw','advance']:
-    # for method in ['ffw']:
-    for method in ['advance']:
+    for method in ['ffw']:
+    # for method in ['advance']:
         main(
             shape_x=128, # TODO: hl gets stuck for shape_x=1024 in successor
             method=method,
-            iterations = 50,
+            giant_leaps = 2, # ffwd
+            iterations = 384, # advance (same as 2 gian leaps for base128)
             render=True,
-            animate=True,
+            animate=False,
             torch_device = 'mps', # use Numpy if None
-            log=False
+            log=True
         )
 

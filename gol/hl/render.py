@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 ## utility to show a point collection as an image in Matplotlib
-def render_img(pts, name=None, filepath=None):
+def render_img(pts, name=None, filepath=None, show=True, force_show=True):
     pts = np.array(pts)
     pts[:, 0] -= np.min(pts[:, 0])
     pts[:, 1] -= np.min(pts[:, 1])
@@ -14,7 +14,10 @@ def render_img(pts, name=None, filepath=None):
     plt.figure(name, figsize=(5, 5))
     plt.axis("off")
 
-    plt.imshow(grays, cmap="bone")
-
     if filepath:
         plt.savefig(filepath, bbox_inches='tight')
+
+    if show:
+        plt.imshow(grays, cmap="bone")
+        if force_show:
+            plt.show()
