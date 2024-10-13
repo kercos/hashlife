@@ -1,10 +1,9 @@
 import time
-from ca.hl.lifeparsers import autoguess_life_file
-from ca.hl.hashlife import (
+from gol.hl.lifeparsers import autoguess_life_file
+from gol.hl.hashlife import (
     construct, ffwd, successor, join,
-    expand, advance, centre
+    expand, advance, centre, render_img
 )
-from ca.hl.render import render_img
 import matplotlib.pyplot as plt
 import os
 
@@ -15,8 +14,8 @@ def load_lif(fname):
 
 def ffwd_log(inputfile):
     init_t = time.perf_counter()
-    pat = load_lif(inputfile)
-    print(ffwd(pat, 64))
+    node = load_lif(inputfile)
+    print(ffwd(node, 64))
     t = time.perf_counter() - init_t
     print(f'Computation took {t*1000.0:.1f}ms')
     print(successor.cache_info())
@@ -30,20 +29,29 @@ def expand_routine(inputfile):
     outputdir = 'output/hl_imgs'
 
     ## test the Gosper glider gun
-    pat = load_lif(inputfile)
-    render_img(expand(pat))
-    plt.savefig(f'{outputdir}/{filename}_0.png', bbox_inches='tight')
-    render_img(expand(advance(centre(centre(pat)), 30)))
-    plt.savefig(f'{outputdir}/{filename}_30.png', bbox_inches='tight')
+    # 00 generations (level=0)
+    gen = 0
+    level = 0
+    node = load_lif(inputfile)
+    filename_gen_level = f'{filename}_{gen}_{level}'
+    filepath = f'{outputdir}/{filename_gen_level}.png'
+    render_img(node, name=filename_gen_level, filepath=filepath)
 
-    render_img(expand(advance(centre(centre(pat)), 120), level=0))
-    plt.savefig(f'{outputdir}/{filename}_120_0.png', bbox_inches='tight')
-    render_img(expand(advance(centre(centre(pat)), 120), level=1))
-    plt.savefig(f'{outputdir}/{filename}_120_1.png', bbox_inches='tight')
-    render_img(expand(advance(centre(centre(pat)), 120), level=2))
-    plt.savefig(f'{outputdir}/{filename}_120_2.png', bbox_inches='tight')
-    render_img(expand(advance(centre(centre(pat)), 120), level=3))
-    plt.savefig(f'{outputdir}/{filename}_120_3.png', bbox_inches='tight')
+    # 30 generations (level=0)
+    gen = 30
+    level = 0
+    node_30 = advance(centre(centre(node)), gen)
+    filename_gen_level = f'{filename}_{gen}_{level}'
+    filepath = f'{outputdir}/{filename_gen_level}.png'
+    render_img(node_30, level=level, name=filename_gen_level, filepath=filepath)
+
+    # 120 generations (different levels)
+    gen = 120
+    node_120 = advance(centre(centre(node)), gen)
+    for level in [0,1,2,3]:
+        filename_gen_level = f'{filename}_{gen}_{level}'
+        filepath = f'{outputdir}/{filename_gen_level}.png'
+        render_img(node_120, level=level, name=filename_gen_level, filepath=filepath)
 
 if __name__ == '__main__':
     ffwd_log('input/hl_lifep/breeder.lif')

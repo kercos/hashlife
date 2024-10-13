@@ -217,14 +217,15 @@ def expand(node, x=0, y=0, clip=None, level=0):
 
 def render_img(
         node,
-        crop=False,
+        level=0,
+        crop=True, # by default render the smallest box containing alive cells
         offset = None, # only when crop is False (moving things to center)
         name=None, filepath=None,
         show=True, force_show=True):
     """
     Utility to show a point collection as an image in Matplotlib
     """
-    pts = expand(node) # triplets with points and gray values (only > 0)
+    pts = expand(node, level=level) # triplets with points and gray values (only > 0)
     pts = np.array(pts)
     pts[:, 0] -= np.min(pts[:, 0])
     pts[:, 1] -= np.min(pts[:, 1])
