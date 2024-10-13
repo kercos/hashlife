@@ -5,17 +5,17 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
 ## Run the code
 - main (pure)
   ```
-  python -m gol.main
+  python -m gol.main_pure
   ```
 - benchmark (pure)
   ```
-  python -m gol.benchmark
+  python -m gol.benchmark_pure
   ```
 - main (hl)
   ```
-  python -m gol.hl.main
+  python -m gol.main_hl
   ```
-- main (pure/hl)
+- test (pure/hl)
   ```
   python -m gol.test
   ```

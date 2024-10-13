@@ -1,4 +1,4 @@
-from gol.main import main_gol
+from gol.main_pure import main_gol
 
 ##############
 # BENCHMARKS
