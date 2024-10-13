@@ -2,9 +2,11 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from gol.pure.automata import Automata
+from gol.base import generate_base
 from gol.utils import (
     init_gol_board_neighborhood_rule,
     render_pure_img,
+    show_board_np,
     render_pure_animation,
     numpy_to_life_106
 )
@@ -15,33 +17,6 @@ from gol.hl.hashlife import (
 )
 
 outputdir = 'output/base'
-
-def generate_hl_base(size, file_life106=None):
-    board, neighborhood, rule = init_gol_board_neighborhood_rule(
-        size = size,
-        initial_state = 'random', # 'random', 'square', 'filename.npy'
-        density = 0.5, # only used on initial_state=='random'
-        seed = 123,
-    )
-
-    if file_life106 is not None:
-        numpy_to_life_106(board, file_life106)
-
-    # generate tuples (cells x,y coordinate which are 'on')
-    pat_tuples = tuple(
-        (x,y)
-        for x in range(size)
-        for y in range(size)
-        if board[y,x]
-    )
-
-    # construct pattern
-    init_t = time.process_time()
-    node = construct(pat_tuples)
-    t = time.process_time() - init_t
-    print(f'Computation (hl-construct) took {t*1000.0:.1f} ms')
-
-    return node, board, neighborhood, rule
 
 def compute_hl_ffwd(node, giant_leaps, log=True):
 
@@ -100,7 +75,7 @@ def test_hl_pure(
 
     filename = f'base{size}'
     base_life106_filepath = f'{outputdir}/{filename}.LIFE'
-    node, board, neighborhood, rule = generate_hl_base(size, base_life106_filepath)
+    node, board, neighborhood, rule = generate_base(size, base_life106_filepath)
 
     if render:
         # render initial state (gen=0)
@@ -175,14 +150,76 @@ def test_hl_pure(
                 torch_device=torch_device
             )
 
-def test_hl_pruning(size=16):
+def test_hl_pruning(size=128):
 
-    filename = f'base{size}'
-    base_life106_filepath = f'{outputdir}/{filename}.LIFE'
-    node, board, neighborhood, rule = generate_hl_base(size, base_life106_filepath)
+    outputdir = 'output/jumps'
+
+    basefilename = f'base{size}'
+    base_life106_filepath = f'{outputdir}/{basefilename}.LIFE'
+    node, board, neighborhood, rule = generate_base(size, base_life106_filepath)
+
+    # final_size = 32
+    # pad_before_after = (final_size - size) // 2
+    # board_padding = np.pad(board, pad_before_after)
+
+    # automata = Automata(
+    #     board = board_padding,
+    #     neighborhood = neighborhood,
+    #     rule = rule,
+    #     torus = False,
+    #     use_fft = False,
+    #     torch_device = None, # numpy
+    # )
+
     print(f'base{size}', node)
-    node_ffwd, gens = compute_hl_ffwd(node, giant_leaps=1, log=False)
-    print(f'1 leap, gen={gens}', node)
+
+    gl_counter = 0
+
+    for j in range(1,10):
+
+        print('----------------')
+        print('j:', j)
+
+        giant_leaps = 2
+        gl_counter += giant_leaps
+
+        node_jump, gens = compute_hl_ffwd(node, giant_leaps=giant_leaps, log=False)
+        print(f'jump={j} gl={gl_counter}, gen={gens}', node)
+
+        # automata.benchmark(iterations=gens)
+
+        # automata.show_current_frame(
+        #     name = f'{basefilename}_{final_size}_pure_{gens}',
+        #     force_show = False
+        # )
+
+        filename = f'{basefilename}_j{j}_gl{gl_counter}_iter{gens}'
+        filepath = f'{outputdir}/{filename}'
+        render_img(
+            node_jump,
+            name = filename,
+            filepath = filepath,
+            crop = True,
+            show = False
+        )
+
+        node_jump_inner = inner(node_jump)
+        print('inner', node_jump_inner)
+
+        filename_inner = f'{basefilename}_j{j}_gl{gl_counter}_iter{gens}_inner'
+        filepath_inner = f'{outputdir}/{filename_inner}'
+        render_img(
+            node_jump_inner,
+            name = filename_inner,
+            filepath = filepath_inner,
+            crop = True,
+            show = False
+        )
+
+        # show all
+        # plt.show()
+
+        node = node_jump_inner
 
 
 if __name__ == "__main__":

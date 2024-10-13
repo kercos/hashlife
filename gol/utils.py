@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from gol.pure.automata import Automata
+from matplotlib import pyplot as plt
 
 def init_gol_board_neighborhood_rule(
         size = 16,
@@ -56,6 +57,18 @@ def init_gol_board_neighborhood_rule(
     # ]
 
     return board, neighborhood, rule
+
+def show_board_np(board, name, force_show=True):
+    plt.figure(name, figsize=(5, 5))
+    plt.imshow(
+        board,
+        interpolation="nearest",
+        cmap=plt.cm.gray
+    )
+    plt.axis("off")
+
+    if force_show:
+        plt.show()
 
 def render_pure_img(
         board, neighborhood, rule,
