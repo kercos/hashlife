@@ -75,16 +75,18 @@ def compute_hl_advance(node, iterations, log=True):
 
     return node
 
-def render_hl(node, filename, show=True):
+def render_hl(node, filename, offset=None, show=True):
     # newnode = expand(advance(centre(centre(node)), gen), level=0)
     filepath = f'{outputdir}/{filename}.png'
-    render_img(
+    pts_hl = render_img(
         node,
-        crop=True, # TODO: fix me and change me to False
+        crop=False,
+        offset=offset,
         name=filename, filepath=filepath,
         show=show, force_show=False
     )
     print('--> `hl` img:', filepath)
+    return pts_hl
 
 def main(
         shape_x = 16,
@@ -108,7 +110,7 @@ def main(
             show=show_first,
             torch_device=torch_device
         )
-        render_hl(node, f'{filename}_0_hl', show=show_first)
+        render_hl(node, f'{filename}_0_hl', offset=None, show=show_first)
         if show_first:
             plt.show() # show both
 
@@ -144,10 +146,22 @@ def main(
                 show=True,
                 torch_device=torch_device
             )
-            # pure_bord = automata.board
-            # size = pure_bord.shape[0]
-            render_hl(node, f'{filename}_{iterations}_hl', show=True)
+            board_pure = automata.board
+            assert new_size_pure  == board_pure.shape[0]
+
+            # making offset in hl (by default it print on top-left corner as tight as possible)
+            # get coordinates of `on` cells in board_pure
+            pure_boord_on_cells_xy = np.array(tuple(zip(*np.where(board_pure==1))))
+            upper_left_on_cell_xy = np.min(pure_boord_on_cells_xy,axis=0)
+            board_hl = render_hl(
+                node,
+                filename=f'{filename}_{iterations}_hl',
+                offset=upper_left_on_cell_xy,
+                show=True
+            )
+            assert np.all(board_pure==board_hl)
             plt.show() # show both
+
         if animate:
             render_pure_animation(
                 board, neighborhood, rule,

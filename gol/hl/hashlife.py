@@ -215,7 +215,12 @@ def expand(node, x=0, y=0, clip=None, level=0):
             + expand(node.d, x + offset, y + offset, clip, level)
         )
 
-def render_img(node, crop=False, name=None, filepath=None, show=True, force_show=True):
+def render_img(
+        node,
+        crop=False,
+        offset = None, # only when crop is False (moving things to center)
+        name=None, filepath=None,
+        show=True, force_show=True):
     """
     Utility to show a point collection as an image in Matplotlib
     """
@@ -223,6 +228,7 @@ def render_img(node, crop=False, name=None, filepath=None, show=True, force_show
     pts = np.array(pts)
     pts[:, 0] -= np.min(pts[:, 0])
     pts[:, 1] -= np.min(pts[:, 1])
+
     if crop:
         max_x = int(np.max(pts[:, 0] + 1))
         max_y = int(np.max(pts[:, 1] + 1))
@@ -231,8 +237,14 @@ def render_img(node, crop=False, name=None, filepath=None, show=True, force_show
         size = 2 ** node.k
         grays = np.zeros((size,size))
 
-    for x, y, g in pts:
-        grays[int(y), int(x)] = g
+    if offset is not None:
+        assert crop==False, "offset only valid when crop is False"
+        offset_y, offset_x = offset
+        for x, y, g in pts:
+            grays[int(y+offset_y), int(x+offset_x)] = g
+    else:
+        for x, y, g in pts:
+            grays[int(y), int(x)] = g
 
     if filepath:
         fig = plt.figure()
@@ -243,16 +255,24 @@ def render_img(node, crop=False, name=None, filepath=None, show=True, force_show
             cmap=plt.cm.gray
         )
         plt.axis("off")
-        plt.savefig(filepath, bbox_inches='tight')
+        plt.savefig(
+            filepath,
+            bbox_inches='tight', pad_inches=0 # no frame
+        )
         plt.close(fig) # so it's not shown
 
     if show:
         plt.figure(name, figsize=(5, 5))
         plt.axis("off")
-        plt.imshow(grays, cmap="bone")
+        # plt.imshow(grays, cmap="bone")
+        plt.imshow(
+            grays,
+            interpolation="nearest",
+            cmap=plt.cm.gray
+        )
         if force_show:
             plt.show()
-
+    return grays
 
 def print_node(node):
     """
