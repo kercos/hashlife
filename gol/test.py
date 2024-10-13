@@ -96,6 +96,8 @@ def main(
         torch_device = None,
         log = True):
 
+    '''Make sure hl-ffwd and hl-advance are considtent with pure'''
+
     filename = f'base{shape_x}'
     base_life106_filepath = f'{outputdir}/{filename}.LIFE'
     node, board, neighborhood, rule = generate_hl_base(shape_x, base_life106_filepath)
@@ -176,6 +178,7 @@ if __name__ == "__main__":
 
     # NOTE: hl gets stuck for shape_x=1024 in successor
 
+    # make sure hl-ffwd and hl-advance are considtent with pure
     main(
         shape_x=128,
         giant_leaps = 2, # ffwd -> advance
