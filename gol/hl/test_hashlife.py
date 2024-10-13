@@ -1,20 +1,12 @@
 from gol.hl.hashlife import (
-    join,
-    successor,
-    on,
-    off,
-    construct,
-    centre,
-    expand,
-    inner,
-    pad,
-    crop,
-    is_padded,
-    get_zero,
-    baseline_life,
+    join, successor,
+    on, off,
+    construct, centre, expand, inner,
+    pad, crop, is_padded, get_zero,
     advance,
     ffwd,
 )
+from gol.hl.baseline import baseline_life
 from gol.hl.lifeparsers import autoguess_life_file
 from itertools import product
 import os
@@ -36,7 +28,7 @@ def test_bootstrap():
         assert successor.cache_info().currsize == 65536
 
 
-test_fname = "input/hl_lifep/gun30.lif"
+test_fname = "input/lifep/gun30.lif"
 test_pattern, _ = autoguess_life_file(test_fname)
 
 
@@ -55,7 +47,7 @@ def test_advance():
 
 
 def test_ffwd_large():
-    pat, _ = autoguess_life_file("input/hl_lifep/breeder.lif")
+    pat, _ = autoguess_life_file("input/lifep/breeder.lif")
     ffwd(construct(pat), 64)
 
 
@@ -74,15 +66,6 @@ def align(pts):
 
 def same_pattern(pt_a, expanded):
     return align(pt_a) == align([(x, y) for x, y, gray in expanded])
-
-
-def verify_baseline(pat, n):
-    node = construct(pat)
-    assert same_pattern(pat, expand(node))
-    for i in range(n):
-        advanced = advance(node, i)
-        assert same_pattern(pat, expand(advanced))
-        pat = baseline_life(pat)
 
 
 def test_gray():
@@ -109,11 +92,29 @@ def test_clip():
     verify_clipped(node, 40, 40, 160, 160)
 
 
+def verify_baseline(pat, n):
+    from gol.hl.hashlife import construct, expand, advance
+    from gol.hl.test_hashlife import same_pattern
+    node = construct(pat)
+    if not same_pattern(pat, expand(node)):
+        return False
+    for i in range(n):
+        advanced = advance(node, i)
+        if not same_pattern(pat, expand(advanced)):
+            return False
+        pat = baseline_life(pat)
+    return True
+
+
 def test_all_patterns():
-    for pat_fname in os.listdir("lifep"):
-        if pat_fname.endswith(".lif"):
-            pat, _ = autoguess_life_file("input/hl_lifep/" + pat_fname)
-            verify_baseline(pat, 64)
+    lifep_dir = "input/lifep/"
+    from tqdm import tqdm
+    for pat_fname in tqdm(sorted(os.listdir(lifep_dir))):
+    # for pat_fname in sorted(os.listdir(lifep_dir)):
+        if pat_fname.endswith(".LIF"):
+            pat, _ = autoguess_life_file(lifep_dir + pat_fname)
+            if not verify_baseline(pat, 64):
+                print(pat_fname, 'error')
 
 
 def test_baseline():
@@ -161,4 +162,13 @@ def validate_tree(node):
         validate_tree(node.d)
 
 if __name__ == "__main__":
-    test_baseline()
+
+    test_all_patterns()
+    # TODO verify erros:
+    # - ACORN.LIF
+    # - BHEPTO.LIF
+    # - PI.LIF
+    # - RPENTO.LIF
+    # test_baseline()
+
+

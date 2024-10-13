@@ -67,6 +67,6 @@ def expand_routine(inputfile):
     plt.show()
 
 if __name__ == '__main__':
-    ffwd_log('input/hl_lifep/breeder.lif')
-    expand_routine('input/hl_lifep/gun30.LIF')
+    ffwd_log('input/lifep/breeder.lif')
+    expand_routine('input/lifep/gun30.LIF')
 
