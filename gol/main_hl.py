@@ -28,30 +28,43 @@ def expand_routine(inputfile):
     os.path.splitext(filename_ext)
     outputdir = 'output/hl_imgs'
 
+    # nodes
+    node = load_lif(inputfile)
+    node_30 = advance(centre(centre(node)), 30)
+    node_120 = advance(centre(centre(node)), 120)
+
     ## test the Gosper glider gun
     # 00 generations (level=0)
     gen = 0
     level = 0
-    node = load_lif(inputfile)
-    filename_gen_level = f'{filename}_{gen}_{level}'
-    filepath = f'{outputdir}/{filename_gen_level}.png'
-    render_img(node, name=filename_gen_level, filepath=filepath)
+    render_img(
+        node,
+        name = f'{filename}_{gen}_{level}',
+        filepath = f'{outputdir}/{filename}_{gen}_{level}.png'
+    )
 
     # 30 generations (level=0)
     gen = 30
     level = 0
-    node_30 = advance(centre(centre(node)), gen)
-    filename_gen_level = f'{filename}_{gen}_{level}'
-    filepath = f'{outputdir}/{filename_gen_level}.png'
-    render_img(node_30, level=level, name=filename_gen_level, filepath=filepath)
+    render_img(
+        node_30,
+        level=level,
+        name = f'{filename}_{gen}_{level}',
+        filepath = f'{outputdir}/{filename}_{gen}_{level}.png'
+    )
 
     # 120 generations (different levels)
     gen = 120
-    node_120 = advance(centre(centre(node)), gen)
     for level in [0,1,2,3]:
-        filename_gen_level = f'{filename}_{gen}_{level}'
-        filepath = f'{outputdir}/{filename_gen_level}.png'
-        render_img(node_120, level=level, name=filename_gen_level, filepath=filepath)
+        render_img(
+            node_120,
+            level=level,
+            name = f'{filename}_{gen}_{level}',
+            filepath = f'{outputdir}/{filename}_{gen}_{level}.png'
+        )
+
+    # show figures all at once
+    plt.show()
 
 if __name__ == '__main__':
     ffwd_log('input/hl_lifep/breeder.lif')

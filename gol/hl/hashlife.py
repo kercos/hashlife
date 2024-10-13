@@ -221,7 +221,7 @@ def render_img(
         crop=True, # by default render the smallest box containing alive cells
         offset = None, # only when crop is False (moving things to center)
         name=None, filepath=None,
-        show=True, force_show=True):
+        show=True, force_show=False):
     """
     Utility to show a point collection as an image in Matplotlib
     """
