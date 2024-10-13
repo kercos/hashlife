@@ -3,13 +3,13 @@ import numpy as np
 from gol.pure.automata import Automata
 
 def init_gol_board_neighborhood_rule(
-        shape_x = 16,
+        size = 16,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
         seed = 123,
     ):
 
-    shape = (shape_x, shape_x)
+    shape = (size, size)
 
     if initial_state == 'random':
         # initialize random generator
@@ -21,8 +21,8 @@ def init_gol_board_neighborhood_rule(
         assert sq % 2 == 0
         board = np.zeros(shape)
         board[
-            shape_x//2-sq//2:shape_x//2+sq//2,
-            shape_x//2-sq//2:shape_x//2+sq//2
+            size//2-sq//2:size//2+sq//2,
+            size//2-sq//2:size//2+sq//2
         ] = 1 # alive
     else:
         assert initial_state.endswith('.npy')
@@ -117,10 +117,10 @@ def render_pure_animation(
 def numpy_to_life_106(board_np, filepath):
     # see http://www.mirekw.com/ca/ca_files_formats.html
     header = '#Life 1.06'
-    shape_x, shape_y = board_np.shape
+    size, shape_y = board_np.shape
 
     lines = [header]
-    for x in range(shape_x): # columns (x)
+    for x in range(size): # columns (x)
         for y in range(shape_y): #rows (y)
             if board_np[y,x]:
                 lines.append(f'{x} {y}') # x,y
@@ -135,7 +135,7 @@ def numpy_to_life_106(board_np, filepath):
 
 if __name__ == "__main__":
     board, neighborhood, rule = init_gol_board_neighborhood_rule(
-        shape_x = 16,
+        size = 16,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
         seed = 123,

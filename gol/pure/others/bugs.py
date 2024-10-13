@@ -11,13 +11,13 @@ class Bugs(Automata):
         Automata.__init__(self, board, neighborhood, rule)
 
 def main(
-        shape_x = 256,
+        size = 256,
         density=0.5,
         seed = 123
     ):
 
     rng = np.random.default_rng(seed)
-    shape = (shape_x, shape_x)
+    shape = (size, size)
     board = rng.uniform(0, 1, shape)
     board = board < density
 

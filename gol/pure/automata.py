@@ -40,11 +40,11 @@ class Automata:
         # neighborhood (e.g, 3x3 in GoL)
         self.neighborhood = neighborhood
 
-        self.shape_x, _, = self.height, self.width = self.shape = self.board.shape
+        self.size, _, = self.height, self.width = self.shape = self.board.shape
 
         assert self.height == self.width
 
-        self.minus_shape_x_half_plus_one =  - int(self.shape_x / 2) + 1
+        self.minus_size_half_plus_one =  - int(self.size / 2) + 1
 
         self.rule = rule
         self.torus = torus
@@ -182,7 +182,7 @@ class Automata:
     def np_recenter_conv(self, counts_int):
         return np.roll(
             counts_int,
-            self.minus_shape_x_half_plus_one,
+            self.minus_size_half_plus_one,
             axis=(0,1)
         )
 
@@ -290,8 +290,8 @@ class Automata:
         return torch.roll(
             counts_int,
             (
-                self.minus_shape_x_half_plus_one,
-                self.minus_shape_x_half_plus_one
+                self.minus_size_half_plus_one,
+                self.minus_size_half_plus_one
             ), # need tuple here because torch behaves differently from numpy apparently
             dims=(0,1)
         )
@@ -360,7 +360,7 @@ class Automata:
 
         hz = iterations / ellapsed
 
-        hz_B_cell = hz * self.shape_x * self.shape_x / 10 ** 9 # Billions
+        hz_B_cell = hz * self.size * self.size / 10 ** 9 # Billions
 
         print(
             "Performed", iterations,

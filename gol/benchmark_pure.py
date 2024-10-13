@@ -20,7 +20,7 @@ def benchmark():
     # CONWAY GAME OF LIFE
     # see Automata.benchmark
     main_gol(
-        shape_x = 2**10, # 2**10 == 1024,
+        size = 2**10, # 2**10 == 1024,
         initial_state = 'random', # 'square', 'filenmae.npy'
         density = 0.5, # only used with initial_state=='random'
         seed = 123, # only used with initial_state=='random'

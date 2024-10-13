@@ -3,7 +3,7 @@ from gol.pure.automata import Automata
 from gol.utils import init_gol_board_neighborhood_rule
 
 def main_gol(
-        shape_x = 16,
+        size = 16,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
         seed = 123,
@@ -18,7 +18,7 @@ def main_gol(
 
     # init gol board and rule
     board, neighborhood, rule = init_gol_board_neighborhood_rule(
-        shape_x = shape_x,
+        size = size,
         initial_state = initial_state,
         density = density,
         seed = seed
@@ -53,7 +53,7 @@ def main_gol(
 def manual_check():
 
     automata = main_gol(
-        shape_x = 4,
+        size = 4,
         initial_state = 'random',
         density = 0.5,
         seed = 123,
@@ -72,7 +72,7 @@ def check_reproducible():
 
     def run(params):
         return main_gol(
-            shape_x = 4,
+            size = 4,
             initial_state = 'random',
             density = 0.5,
             seed = 123,
@@ -117,7 +117,7 @@ def check_reproducible():
 
 def reproduce_animation():
     main_gol(
-        shape_x = 16,
+        size = 16,
         initial_state = 'random',
         density = 0.5,
         seed = 123,
@@ -131,7 +131,7 @@ def reproduce_animation():
 def main():
     # CONWAY GAME OF LIFE
     main_gol(
-        shape_x = 2**10, # 2**10 == 1024,
+        size = 2**10, # 2**10 == 1024,
         initial_state = 'random', # 'square', 'filenmae.npy'
         density = 0.5, # only used with initial_state=='random'
         seed = 123, # only used with initial_state=='random'

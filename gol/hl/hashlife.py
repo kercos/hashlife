@@ -20,6 +20,9 @@ class Node:
         self.a, self.b, self.c, self.d = a,b,c,d
         self.hash = hash
 
+    def size(self):
+        return 1<<self.k
+
     def __hash__(self):
         return self.hash
 
@@ -35,7 +38,7 @@ class Node:
         return False
 
     def __repr__(self):
-        return f"Node k={self.k}, {1<<self.k} x {1<<self.k}, population {self.n}"
+        return f"Node k={self.k}, {self.size()} x {self.size()}, population {self.n}"
 
 # base level binary nodes
 on = Node(k=0, n=1, hash=1)

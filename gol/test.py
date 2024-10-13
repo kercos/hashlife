@@ -16,9 +16,9 @@ from gol.hl.hashlife import (
 
 outputdir = 'output/base'
 
-def generate_hl_base(shape_x, file_life106=None):
+def generate_hl_base(size, file_life106=None):
     board, neighborhood, rule = init_gol_board_neighborhood_rule(
-        shape_x = shape_x,
+        size = size,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
         seed = 123,
@@ -30,8 +30,8 @@ def generate_hl_base(shape_x, file_life106=None):
     # generate tuples (cells x,y coordinate which are 'on')
     pat_tuples = tuple(
         (x,y)
-        for x in range(shape_x)
-        for y in range(shape_x)
+        for x in range(size)
+        for y in range(size)
         if board[y,x]
     )
 
@@ -88,8 +88,8 @@ def render_hl(node, filename, offset=None, show=True):
     print('--> `hl` img:', filepath)
     return pts_hl
 
-def main(
-        shape_x = 16,
+def test_hl_pure(
+        size = 16,
         giant_leaps = 1,
         render = False,
         animate = False,
@@ -98,11 +98,12 @@ def main(
 
     '''Make sure hl-ffwd and hl-advance are considtent with pure'''
 
-    filename = f'base{shape_x}'
+    filename = f'base{size}'
     base_life106_filepath = f'{outputdir}/{filename}.LIFE'
-    node, board, neighborhood, rule = generate_hl_base(shape_x, base_life106_filepath)
+    node, board, neighborhood, rule = generate_hl_base(size, base_life106_filepath)
 
     if render:
+        # render initial state (gen=0)
         show_first = False # True if you want to show the first gen
         render_pure_img(
             board, neighborhood, rule,
@@ -118,11 +119,11 @@ def main(
 
     # hl-ffwd
     assert giant_leaps is not None
-    print(f'base {shape_x} ffwd')
+    print(f'base {size} ffwd')
     node_ffwd, gens = compute_hl_ffwd(node, giant_leaps, log=log)
     iterations = gens # get the generations equivalent to the giant leaps
     # hl-advance
-    print(f'base {shape_x} advance')
+    print(f'base {size} advance')
     node_advance = compute_hl_advance(node, iterations, log=log)
 
     if node_advance.k != node_ffwd.k:
@@ -136,7 +137,7 @@ def main(
     if render or animate:
         # prepare padding for pure rendering
         new_size_pure = 2 ** node.k # sometime k-1 is ok but not always
-        padding = (new_size_pure - shape_x) // 2 # before/after
+        padding = (new_size_pure - size) // 2 # before/after
         print('node k:', node.k, 'padding:', padding, 'new_size:', new_size_pure)
 
         if render:
@@ -174,17 +175,29 @@ def main(
                 torch_device=torch_device
             )
 
+def test_hl_pruning(size=16):
+
+    filename = f'base{size}'
+    base_life106_filepath = f'{outputdir}/{filename}.LIFE'
+    node, board, neighborhood, rule = generate_hl_base(size, base_life106_filepath)
+    print(f'base{size}', node)
+    node_ffwd, gens = compute_hl_ffwd(node, giant_leaps=1, log=False)
+    print(f'1 leap, gen={gens}', node)
+
+
 if __name__ == "__main__":
 
-    # NOTE: hl gets stuck for shape_x=1024 in successor
+    # NOTE: hl gets stuck for size=1024 in successor
 
     # make sure hl-ffwd and hl-advance are considtent with pure
-    main(
-        shape_x=128,
-        giant_leaps = 2, # ffwd -> advance
-        render=True,
-        animate=False,
-        torch_device = 'mps', # use Numpy if None
-        log=True
-    )
+    # test_hl_pure(
+    #     size=128,
+    #     giant_leaps = 2, # ffwd -> advance
+    #     render=True,
+    #     animate=False,
+    #     torch_device = 'mps', # use Numpy if None
+    #     log=True
+    # )
+
+    test_hl_pruning()
 
