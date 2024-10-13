@@ -88,7 +88,7 @@ def construct(pts):
 
 
 #####################
-# DECONSTRUCTORS
+# DECONSTRUCTOR
 #
 def expand(node, x=0, y=0, clip=None, level=0):
     """Turn a quadtree a list of (x,y,gray) triples
@@ -118,7 +118,7 @@ def expand(node, x=0, y=0, clip=None, level=0):
             + expand(node.d, x + offset, y + offset, clip, level)
         )
 #
-# DECONSTRUCTORS
+# DECONSTRUCTOR
 #####################
 
 
@@ -128,7 +128,8 @@ def expand(node, x=0, y=0, clip=None, level=0):
 def centre(m):
     """
     Return a node at level `k+1`, which is centered on the given quadtree node.
-    This basically adds a single-cell frame with off cells (perimeter) to the pattern
+    This adds a frame with off cells (in the perimeter) to the pattern
+    e.g., from a 256x256 board to a 512x512 board
     """
     z = get_zero(m.a.k)  # get the right-sized zero node
     return join(
@@ -137,8 +138,9 @@ def centre(m):
 
 def inner(node):
     """
-    Return the central portion of a node -- the inverse operation
-    of centre()
+    Return the central portion of a node -- the inverse operation of centre()
+    This removes a frame (perimeter) of cells from the pattern
+    e.g., from a 512x512 board to a 256x256 board
     """
     return join(node.a.d, node.b.c, node.c.b, node.d.a)
 
