@@ -34,12 +34,13 @@ def main_gol(
         torch_device = torch_device,
     )
 
-
     if animate:
         # Animate automata
-        # interval = 200 # ms
         interval = 0 # as fast as possible
-        automata.animate(interval) #ms
+        automata.animate(
+            iterations = iterations,
+            interval = interval #ms
+        )
     else:
         # Benchmark automata
         automata.benchmark(iterations)
@@ -156,7 +157,7 @@ if __name__ == "__main__":
     '''
     The main code
     '''
-    main()
+    # main()
 
     '''
     Run manual check and verify manually 4x4 GoL
@@ -171,7 +172,7 @@ if __name__ == "__main__":
     '''
     Reproduce the animation which should look familiar
     '''
-    # reproduce_animation()
+    reproduce_animation()
 
 
 
