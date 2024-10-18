@@ -110,7 +110,11 @@ class Automata:
                 self.kernal_ft = np_fft2(self.kernal) # same shape but floating numbers
             else:
                 # use conv2d (more efficient)
-                self.numpy_conv_func = self.np_conv_conv2d
+                self.numpy_conv_func = self.np_conv_conv2d_scipy_signal_convolve2d
+
+                # TODO: fix me - currently not working
+                # self.numpy_conv_func = self.np_conv_conv2d_scipy_ndimage_convolve
+
                 self.np_conv2d_boundary = 'circular' if self.torus else 'fill'
 
 
@@ -120,7 +124,7 @@ class Automata:
         return self.board
 
     '''
-    Main count_real operation in a single time-step
+    Main 1-step operation (numpy-fft)
     Based on numpy and fft
     '''
     def np_conv_fft(self):
@@ -154,10 +158,10 @@ class Automata:
         return counts_int
 
     '''
-    Main count_real operation in a single time-step
-    Based on numpy and conv2d
+    Main 1-step operation (numpy)
+    Based on numpy and convolve2d from scipy.signal
     '''
-    def np_conv_conv2d(self):
+    def np_conv_conv2d_scipy_signal_convolve2d(self):
 
         # the conv2d step (via scipy)
         counts_int = scipy.signal.convolve2d(
@@ -174,6 +178,27 @@ class Automata:
         counts_int = np.rint(counts_int)
 
         return counts_int
+
+    '''
+    Main 1-step operation (numpy-conv-scipy)
+    Based on scipy.ndimage.convolve
+    TODO: fix me - currently not working
+    '''
+    def np_conv_conv2d_scipy_ndimage_convolve(self):
+        ndimage_gol_k = np.array(
+            [
+                1,1,1,
+                1,2,1,
+                1,1,1
+            ]
+        ).reshape(3,3)
+        result = scipy.ndimage.convolve(
+            self.board,
+            ndimage_gol_k,
+            mode="wrap"
+        )
+        return (result>4) & (result<8)
+
 
     '''
     Rolling over the boundaries (numpy version)
@@ -225,14 +250,14 @@ class Automata:
 
         # counting number of alive cells in neighbourhood (same shape)
         # via fft or conv2 based on torch_conv_func
-        # (np_conv_fft or np_conv_conv2d)
+        # (np_conv_fft or np_conv_conv2d_scipy_signal_convolve2d)
         count_ones_neighbours = self.numpy_conv_func()
 
         # apply rule (update board inplace)
         self.np_apply_rule(count_ones_neighbours)
 
     '''
-    Main count_real operation in a single time-step (torch version)
+    Main 1-step operation (torch version)
     Usign FFT (not as efficient as torch.nn.functional.conv2d)
     '''
     def torch_conv_fft(self):
@@ -262,7 +287,7 @@ class Automata:
         return counts_int
 
     '''
-    Main count_real operation in a single time-step
+    Main 1-step operation (torch)
     torch version using conv2d (more efficient)
     '''
     def torch_conv_conv2d(self):
