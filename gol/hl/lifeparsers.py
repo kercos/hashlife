@@ -34,80 +34,110 @@ def to_numpy(pos):
         result[y, x] = 1
     return result
 
-def to_rle(pts):
+def to_rle(pts, fixed_size=None):
     """Convert a point list to RLE format.
+    Pts is a list of ON points: (x,y) coordinates
+    If crop is True, it outputs only the region of minimum region of where cells are on
     Returns:
         tuple (rle, (width, height))
         rle: the RLE string,
         width, height: bounds of the pattern """
+
     # sort by x, then y
-    pts.sort(key=lambda x: x[0])
+    pts.sort(key=lambda p: p[0])
     max_x = pts[-1][0]
     min_x = pts[0][0]
-    pts.sort(key=lambda x: x[1])
+    pts.sort(key=lambda p: p[1])
     max_y = pts[-1][1]
     min_y = pts[0][1]
 
+    crop = fixed_size is None
+
+    if not crop:
+        min_x, min_y = 0, 0
+        max_x, max_y = fixed_size-1, fixed_size-1
+
     line = 0
-    x = 0
-    stars = 0
+    column = 0
+    count_on_off = [0,0]
     out = []
 
+    def append_count_symbol(count, symbol):
+        if count==0:
+            return False
+        if count==1:
+            out.append(symbol)
+            return True
+        else: # > 1
+            out.append(f"{count}{symbol}")
+            return True
+
     # write out the on cells
-    def flush_stars():
-        if stars == 1:
-            out.append("o")
-        if stars > 1:
-            out.append("%do" % stars)
+    def flush_symbol(on):
+        symbol_index = 0 if on else 1
+        count = count_on_off[symbol_index]
+        symbol = 'o' if on else 'b'
+        if append_count_symbol(count, symbol):
+            # reset counter
+            count_on_off[symbol_index] = 0
 
     for pt in pts:
-        pt = (pt[0] - min_x, pt[1] - min_y)
+        if crop:
+            pt_x, pt_y = (pt[0] - min_x, pt[1] - min_y)
+        else:
+            pt_x, pt_y = pt[0], pt[1]
+
         # y co-ord change, write out new lines
-        if pt[1] != line:
-            flush_stars()
+        if pt_y != line:
+            flush_symbol(on=True)
+            count_lines = pt_y - line
+            if count_lines > 0:
+                append_count_symbol(count_lines, '$')
+            line = pt_y
+            column = 0
 
-            reps = pt[1] - line
-            if reps != 1:
-                out.append("%d$" % reps)
-            else:
-                out.append("$")
-            line = pt[1]
-            stars = 0
-            x = 0
+        # mark blanks (skipped in pts)
+        # count_on_off[1] = 0 # count_off (reset) - TODO: needed?
+        assert count_on_off[1] == 0
+        while column != pt_x:
+            column += 1
+            # count-off increment
+            count_on_off[1] += 1 #
+        if count_on_off[1] > 0: # count_off
+            # write out pending on/off cells
+            flush_symbol(on=True)
+            flush_symbol(on=False)
+        # count-on increment
+        count_on_off[0] += 1
+        column += 1
 
-        cts = 0
-        # mark blanks
-        while x != pt[0]:
-            x = x + 1
-            cts = cts + 1
-        if cts != 0:
-            # write out pending on cells
-            flush_stars()
 
-            # write out blanks
-            if cts == 1:
-                out.append("b")
-            else:
-                out.append("%db" % cts)
-            stars = 0
-        stars = stars + 1
-        x = x + 1
+    # write out pending on/off cells
+    flush_symbol(on=True)
+    flush_symbol(on=False)
 
-    flush_stars()
     out.append("!")
-    return "".join(out), (max_x - min_x, max_y - min_y)
+    rle_str = "".join(out)
+    size_x = max_x - min_x + 1
+    size_y = max_y - min_y + 1
+    return rle_str, (size_x, size_y)
 
 
-def write_rle(fname, pts, comments=[]):
+def write_rle(filepath, pts, fixed_size=None, torus=True, rule='B3/S23', comments=[]):
     """Write a point list to a file, with an optional comment block"""
-    rle, (x, y) = to_rle(pts)
-    f = open(fname, "w")
+    rle, (x, y) = to_rle(pts, fixed_size=fixed_size)
+    f = open(filepath, "w")
 
     # size header
-    f.write("x = %d, y = %d\n")
+    if torus:
+        header = f'x = {x}, y = {y}, rule = {rule}:T{x},{y}'
+    else:
+        header = f'x = {x}, y = {y}, rule = {rule}'
+    f.write(header)
+    f.write("\n")
     # comments
     for comment in comments:
-        f.write("#C %s\n" % comment)
+        f.write(f"#C {comment}\n")
 
     # rle, 70 char max width
     rle = textwrap.fill(rle, 70)
@@ -177,7 +207,7 @@ def parse_life_105(file):
 def parse_life_106(file):
     """
      Parse a Life 1.06 file, returning a tuple:
-        positions: list of (x,y) co-ordinates
+        positions: list of (x,y) co-ordinates of ON cells
         comments: all comments in file, as a list of strings, one per line
     """
     lines = file.split("\n")

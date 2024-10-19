@@ -123,6 +123,10 @@ class Automata:
             return self.board.cpu().detach().numpy()
         return self.board
 
+    def get_board_pts(self, only_alive=True):
+        from gol.utils import get_board_pts
+        return get_board_pts(self.board, only_alive=only_alive)
+
     '''
     Main 1-step operation (numpy-fft)
     Based on numpy and fft
@@ -365,13 +369,7 @@ class Automata:
         # apply rule (update board inplace)
         self.torch_apply_rule(count_ones_neighbours)
 
-    '''
-    Main Benchmark to run it as fast as possible (without visualizing it)
-    '''
-    def benchmark(self, iterations):
-        # TODO: change to perf_counter() or pytorch profiler ?
-        start = time.process_time()
-
+    def advance(self,iterations=1):
         if self.use_torch:
             for _ in range(iterations):
                 self.torch_update_board()
@@ -379,6 +377,15 @@ class Automata:
             # use numpy
             for _ in range(iterations):
                 self.np_update_board()
+
+    '''
+    Main Benchmark to run it as fast as possible (without visualizing it)
+    '''
+    def benchmark(self, iterations):
+        # TODO: change to perf_counter() or pytorch profiler ?
+        start = time.process_time()
+
+        self.advance(iterations)
 
         # TODO: change to perf_counter() or pytorch profiler ?
         ellapsed = time.process_time() - start

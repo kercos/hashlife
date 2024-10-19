@@ -58,6 +58,32 @@ def init_gol_board_neighborhood_rule(
 
     return board, neighborhood, rule
 
+'''
+Returns a list of
+- (x,y) points (only_alive=True, default)
+- (x,y, gray) points (only_alive=False),
+    where gray==0. for off and gray==1. for on cells
+'''
+def get_board_pts(board_np, only_alive=True):
+    size = board_np.shape[0]
+    if only_alive:
+        return [
+            (x,y)
+            for x in range(size)
+            for y in range(size)
+            if board_np[y,x]
+        ]
+    else:
+        return [
+            (
+                x,
+                y,
+                1. if board_np[y,x] else 0.
+            )
+            for x in range(size)
+            for y in range(size)
+        ]
+
 def show_board_np(board, name, force_show=True):
     plt.figure(name, figsize=(5, 5))
     plt.imshow(
@@ -126,7 +152,9 @@ def render_pure_animation(
     )
     automata.animate(name=name, iterations=iterations, interval=interval_ms)
 
-# Convert a (dense) NumPy array to list of (x,y) positions in life 1.06
+'''
+Convert a (dense) NumPy array to list of (x,y) positions in life 1.06
+'''
 def numpy_to_life_106(board_np, filepath):
     # see http://www.mirekw.com/ca/ca_files_formats.html
     header = '#Life 1.06'
@@ -146,6 +174,18 @@ def numpy_to_life_106(board_np, filepath):
             [lines[-1]]
         fout.writelines(lines_with_return)
 
+'''
+Convert board to RLE
+'''
+def numpy_to_rle(board_np, filepath):
+    from gol.hl.lifeparsers import write_rle
+
+    pts = get_board_pts(board_np, only_alive=True)
+    size = board_np.shape[0]
+    write_rle(fixed_size=size, filepath=filepath, pts=pts)
+
+
+
 if __name__ == "__main__":
     board, neighborhood, rule = init_gol_board_neighborhood_rule(
         size = 16,
@@ -153,5 +193,7 @@ if __name__ == "__main__":
         density = 0.5, # only used on initial_state=='random'
         seed = 123,
     )
-    filepath_out = 'output/base16_0.LIFE'
-    numpy_to_life_106(board, filepath_out)
+    filepath_out_life = 'output/base16_0.LIFE'
+    filepath_out_rle = 'output/base16_0.RLE'
+    numpy_to_life_106(board, filepath_out_life)
+    numpy_to_rle(board, filepath_out_rle)

@@ -7,9 +7,9 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
   ```
   python -m gol.main_pure
   ```
-- benchmark (pure)
+- benchmark: pure, golly (draft)
   ```
-  python -m gol.benchmark_pure
+  python -m gol.benchmark
   ```
 - main (hl)
   ```
