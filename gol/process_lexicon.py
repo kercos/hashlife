@@ -27,17 +27,19 @@ def count_on_cells(pattern_lines):
         count += l.count('*')
     return count
 
-def process_pattern(block):
+def process_pattern(block, filesystem_write=False, verbose=True):
     global PATTERN_COUNTER, REF_COUNTER, NON_PATTERN_COUNTER
+    pattern_name, pattern = None, None
     first_line = block[0].strip()
     if len(block)==1:
         # reference to other pattern
         # e.g.,
         # :0hd Demonoid:  See {Demonoid}.
-        with open(LEX_ASC_PATTERNS_REF, 'a') as fout:
-            fout.write(first_line)
-            fout.write('\n')
-            REF_COUNTER += 1
+        REF_COUNTER += 1
+        if filesystem_write:
+            with open(LEX_ASC_PATTERNS_REF, 'a') as fout:
+                fout.write(first_line)
+                fout.write('\n')
     else:
         comment_lines = []
         pattern_lines = []
@@ -51,11 +53,12 @@ def process_pattern(block):
 
         if len(pattern_lines) == 0 or count_on_cells(pattern_lines)==0:
             # no pattern found in block
-            with open(LEX_ASC_NON_PATTERNS, 'a') as fout:
-                if NON_PATTERN_COUNTER > 0:
-                    fout.write('--------\n')
-                fout.writelines(block)
-                NON_PATTERN_COUNTER += 1
+            NON_PATTERN_COUNTER += 1
+            if filesystem_write:
+                with open(LEX_ASC_NON_PATTERNS, 'a') as fout:
+                    if NON_PATTERN_COUNTER > 0:
+                        fout.write('--------\n')
+                    fout.writelines(block)
         else:
             # PATTERN
             assert first_line.startswith(':')
@@ -67,20 +70,22 @@ def process_pattern(block):
             on_counter = count_on_cells(pattern)
             pattern_name = str(on_counter).zfill(4) + '_' + pattern_name
 
-            pattern_filepath = os.path.join(LEX_ASC_PATTERNS_DIR, f'{pattern_name}.txt')
-            with open(pattern_filepath, 'w') as fout:
-                fout.write(comment)
-                fout.write('\n')
-                fout.write(pattern)
-                fout.write('\n')
+            if filesystem_write:
+                pattern_filepath = os.path.join(LEX_ASC_PATTERNS_DIR, f'{pattern_name}.txt')
+                with open(pattern_filepath, 'w') as fout:
+                    fout.write(comment)
+                    fout.write('\n')
+                    fout.write(pattern)
+                    fout.write('\n')
+
             PATTERN_COUNTER += 1
             ptattern_counter_zfill = str(PATTERN_COUNTER).zfill(4)
-            print(f'{ptattern_counter_zfill}: {pattern_name}')
+            if verbose:
+                print(f'{ptattern_counter_zfill}: {pattern_name}')
 
-def process_lexicon():
-    with open(LEX_ASC_PATH) as fin:
-        lines = fin.readlines()
+    return pattern_name, pattern
 
+def clean_pattern_filesystem():
     # init (clean) LEX_ASC_PATTERNS_REF file
     for file_to_clean in [LEX_ASC_PATTERNS_REF, LEX_ASC_NON_PATTERNS]:
         with open(file_to_clean, 'w') as fout:
@@ -88,6 +93,14 @@ def process_lexicon():
 
     # delete old patterns
     remove_pattern_files()
+
+
+def process_lexicon(filesystem_write=False, verbose=True):
+
+    all_patterns = dict()
+
+    with open(LEX_ASC_PATH) as fin:
+        lines = fin.readlines()
 
     num_blocks = 0
     block = []
@@ -99,17 +112,37 @@ def process_lexicon():
             if l == '\n':
                 block_started = False
                 num_blocks += 1
-                process_pattern(block)
+                pattern_name, pattern = process_pattern(
+                    block,
+                    filesystem_write = filesystem_write,
+                    verbose = verbose
+                )
+                if pattern_name is not None:
+                    all_patterns[pattern_name] = pattern
                 block = []
             else:
                 block.append(l)
-    print('------')
-    print(f'Found {num_blocks} blocks')
-    print(f'Found {REF_COUNTER} ref')
-    print(f'Found {PATTERN_COUNTER} patterns')
-    print(f'Found {NON_PATTERN_COUNTER} NON-patterns (other blocks)')
+    if verbose:
+        print('------')
+        print(f'Found {num_blocks} blocks')
+        print(f'Found {REF_COUNTER} ref')
+        print(f'Found {PATTERN_COUNTER} patterns')
+        print(f'Found {NON_PATTERN_COUNTER} NON-patterns (other blocks)')
+    else:
+        print(f'Found {PATTERN_COUNTER} patterns')
     assert num_blocks == REF_COUNTER + PATTERN_COUNTER + NON_PATTERN_COUNTER
 
+    return all_patterns
+
+def get_lex_patterns():
+    return process_lexicon(
+        filesystem_write=False,
+        verbose = False
+    )
 
 if __name__ == "__main__":
-    process_lexicon()
+    clean_pattern_filesystem()
+    process_lexicon(
+        filesystem_write=True,
+        verbose=True
+    )

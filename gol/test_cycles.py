@@ -1,9 +1,13 @@
 from collections import Counter, defaultdict
 import numpy as np
+from tqdm import tqdm
 from gol.main_pure import init_gol_board_neighborhood_rule
 from gol.main_pure import Automata
 from gol.utils import numpy_to_stars
-from tqdm import tqdm
+from gol.process_lexicon import get_lex_patterns
+
+NAME_PATTERN = get_lex_patterns()
+PATTERN_NAME = {p:n for n,p in NAME_PATTERN.items()}
 
 def get_board_int(n=15, size=4):
     total_size = size * size
@@ -38,6 +42,14 @@ def print_patterns(board_cycle, all=False):
         pattern_str = '\n'.join(numpy_to_stars(first_board, crop=True))
         print(pattern_str)
 
+def identify_pattern(board_cycle):
+    for b in board_cycle:
+        pattern_str = '\n'.join(numpy_to_stars(b, crop=True))
+        if pattern_str in PATTERN_NAME:
+            name = PATTERN_NAME[pattern_str]
+            print('FOUND PATTERN:', name)
+            return name
+    return None
 
 def get_board_cycle_period(
         size = 2,
@@ -85,8 +97,13 @@ def get_board_cycle_period(
                     board_cycle = board_cycle[i:]
                 if animate:
                     print('Min alive cells:', get_min_on_cells(board_cycle))
+
                     # print patterns
-                    print_patterns(board_cycle)
+                    print_patterns(board_cycle, all=False)
+
+                    # identify pattern
+                    identify_pattern(board_cycle)
+
                     automata.animate(interval=500)
                 return board_cycle, len(board_cycle)
         else:
