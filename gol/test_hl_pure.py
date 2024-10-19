@@ -1,14 +1,10 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from gol.pure.automata import Automata
 from gol.base import generate_base
 from gol.utils import (
-    init_gol_board_neighborhood_rule,
     render_pure_img,
-    show_board_np,
     render_pure_animation,
-    numpy_to_life_106
 )
 from gol.hl.hashlife import (
     construct, ffwd, successor, join,
@@ -156,7 +152,10 @@ def test_hl_pruning(size=128):
 
     basefilename = f'base{size}'
     base_life106_filepath = f'{outputdir}/{basefilename}.LIFE'
-    node, board, neighborhood, rule = generate_base(size, base_life106_filepath)
+    node, board, neighborhood, rule = generate_base(
+        size = size,
+        file_life106 = base_life106_filepath
+    )
 
     # final_size = 32
     # pad_before_after = (final_size - size) // 2
