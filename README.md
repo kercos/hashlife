@@ -3,21 +3,25 @@
 Explore emerging patterns in GoL, something along [these lines](https://softologyblog.wordpress.com/2019/09/03/automatic-detection-of-interesting-cellular-automata/) - not clear if it has been investigated thoroughly so far.
 
 ## Run the code
-- main (pure)
+- main pure
   ```
   python -m gol.main_pure
+  ```
+- main hl (hashlife)
+  ```
+  python -m gol.main_hl
   ```
 - benchmark: pure, golly (draft)
   ```
   python -m gol.benchmark
   ```
-- main (hl)
+- test hl/pure
   ```
-  python -m gol.main_hl
+  python -m gol.test_hl_pure
   ```
-- test (pure/hl)
+- test golly
   ```
-  python -m gol.test
+  python -m gol.test_golly
   ```
 
 ## Project Structure
