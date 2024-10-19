@@ -12,22 +12,27 @@ def init_gol_board_neighborhood_rule(
 
     shape = (size, size)
 
-    if initial_state == 'random':
-        # initialize random generator
-        rng = np.random.default_rng(seed)
-        board = rng.uniform(0, 1, shape)
-        board = board < density
-    elif initial_state == 'square':
-        sq = 2 # alive square size in the middle of the board
-        assert sq % 2 == 0
-        board = np.zeros(shape)
-        board[
-            size//2-sq//2:size//2+sq//2,
-            size//2-sq//2:size//2+sq//2
-        ] = 1 # alive
+    if type(initial_state) is str:
+        if initial_state == 'random':
+            # initialize random generator
+            rng = np.random.default_rng(seed)
+            board = rng.uniform(0, 1, shape)
+            board = board < density
+        elif initial_state == 'square':
+            sq = 2 # alive square size in the middle of the board
+            assert sq % 2 == 0
+            board = np.zeros(shape)
+            board[
+                size//2-sq//2:size//2+sq//2,
+                size//2-sq//2:size//2+sq//2
+            ] = 1 # alive
+        else:
+            assert initial_state.endswith('.npy'), 'wrong initial_state (must end with .npy)'
+            board = np.load(initial_state)
+    elif type(initial_state) is np.ndarray:
+        board = initial_state
     else:
-        assert initial_state.endswith('.npy')
-        board = np.load(initial_state)
+        assert(False), 'wrong initial_state arg'
 
     neighborhood = np.array(
         [
