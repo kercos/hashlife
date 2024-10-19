@@ -31,6 +31,10 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
   ```
   python -m gol.test_golly
   ```
+- process lexicon (https://conwaylife.com/ref/lexicon/lex_home.htm)
+  ```
+  python -m gol.process_lexicon
+  ```
 
 ## Project Structure
 - `pure`: implementation with efficient `numpy`/`pytorch` via `fft` and `conv2d` derived from [njbbaer](https://gist.github.com/njbbaer/4da02e2960636d349e9bae7ae43c213c).
