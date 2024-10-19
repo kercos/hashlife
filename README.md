@@ -7,6 +7,10 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
   ```
   python -m gol.main_pure
   ```
+- test cycles
+  ```
+  python -m gol.test_cycles
+  ```
 - main hl (hashlife)
   ```
   python -m gol.main_hl
