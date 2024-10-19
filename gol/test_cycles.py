@@ -2,6 +2,7 @@ from collections import Counter, defaultdict
 import numpy as np
 from gol.main_pure import init_gol_board_neighborhood_rule
 from gol.main_pure import Automata
+from gol.utils import numpy_to_stars
 from tqdm import tqdm
 
 def get_board_int(n=15, size=4):
@@ -16,6 +17,27 @@ def get_board_seed(seed=123, size=4, density=0.5):
     board = rng.uniform(0, 1, shape)
     board = board < density
     return board
+
+def get_min_on_cells(board_cycle):
+    counts_on_cells = [
+        np.count_nonzero(board_np)
+        for board_np in board_cycle
+    ]
+
+    return np.min(counts_on_cells)
+
+def print_patterns(board_cycle, all=False):
+    if all:
+        for c,b in enumerate(board_cycle, start=1):
+            pattern_str = '\n'.join(numpy_to_stars(b, crop=True))
+            print(f'-{c}-')
+            print(pattern_str)
+            print()
+    else:
+        first_board = board_cycle[0]
+        pattern_str = '\n'.join(numpy_to_stars(first_board, crop=True))
+        print(pattern_str)
+
 
 def get_board_cycle_period(
         size = 2,
@@ -52,16 +74,19 @@ def get_board_cycle_period(
 
     # get cycle (list of boards) and period
     automata.advance(iterations=iterations)
-    fist_board_cycle = automata.get_board_numpy()
+    fist_board_cycle = automata.get_board_numpy(change_to_bool=True)
     board_cycle = [fist_board_cycle]
     while True:
         automata.advance() # next generation
-        next_board = automata.get_board_numpy()
+        next_board = automata.get_board_numpy(change_to_bool=True)
         for i, b_iter in enumerate(board_cycle):
             if np.all(next_board == b_iter):
                 if i>0:
                     board_cycle = board_cycle[i:]
                 if animate:
+                    print('Min alive cells:', get_min_on_cells(board_cycle))
+                    # print patterns
+                    print_patterns(board_cycle)
                     automata.animate(interval=500)
                 return board_cycle, len(board_cycle)
         else:
