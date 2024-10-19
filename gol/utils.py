@@ -158,6 +158,34 @@ def render_pure_animation(
     automata.animate(name=name, iterations=iterations, interval=interval_ms)
 
 '''
+Convert board to . and * string pattern (life 1.05)
+'''
+def numpy_to_stars(board_np, crop=False):
+    if crop:
+        nonzero = np.nonzero(board_np)
+        min_y = np.min(nonzero[0])
+        max_y = np.max(nonzero[0])
+        min_x = np.min(nonzero[1])
+        max_x = np.max(nonzero[1])
+        board_np = board_np[min_y:max_y+1, min_x:max_x+1]
+    return [
+        ''.join('*' if c else '.' for c in line)
+        for line in board_np.tolist()
+    ]
+
+'''
+Convert board to . and * file format (life 1.05)
+'''
+def numpy_to_life_105(board_np, filepath):
+    # see http://www.mirekw.com/ca/ca_files_formats.html
+    pattern_lines = numpy_to_stars(board_np)
+    pattern_lines = '\n'.join(pattern_lines)
+    with open(filepath, 'w') as fout:
+        fout.writelines(pattern_lines)
+
+
+
+'''
 Convert a (dense) NumPy array to list of (x,y) positions in life 1.06
 '''
 def numpy_to_life_106(board_np, filepath):
@@ -183,12 +211,12 @@ def numpy_to_life_106(board_np, filepath):
 Convert board to RLE
 '''
 def numpy_to_rle(board_np, filepath):
+    # see http://www.mirekw.com/ca/ca_files_formats.html
     from gol.hl.lifeparsers import write_rle
 
     pts = get_board_pts(board_np, only_alive=True)
     size = board_np.shape[0]
     write_rle(fixed_size=size, filepath=filepath, pts=pts)
-
 
 
 if __name__ == "__main__":

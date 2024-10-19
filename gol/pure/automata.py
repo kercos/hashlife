@@ -118,10 +118,16 @@ class Automata:
                 self.np_conv2d_boundary = 'circular' if self.torus else 'fill'
 
 
-    def get_board_numpy(self):
+    def get_board_numpy(self, change_to_bool=False):
         if self.use_torch:
-            return self.board.cpu().detach().numpy()
-        return self.board
+            result = self.board.cpu().detach().numpy()
+        else:
+            result = self.board.copy()
+        if change_to_bool:
+            result = result.astype(bool)
+        return result
+
+
 
     def get_board_pts(self, only_alive=True):
         from gol.utils import get_board_pts
@@ -458,11 +464,6 @@ class Automata:
 
         # always force show
         plt.show()
-
-    def get_board_numpy(self):
-        if self.use_torch:
-            return self.board.cpu().detach().numpy()
-        return self.board
 
     def save_last_frame(self, filename, grid=False):
 
