@@ -163,10 +163,18 @@ Convert board to . and * string pattern (life 1.05)
 def numpy_to_stars(board_np, crop=False):
     if crop:
         nonzero = np.nonzero(board_np)
-        min_y = np.min(nonzero[0])
-        max_y = np.max(nonzero[0])
-        min_x = np.min(nonzero[1])
-        max_x = np.max(nonzero[1])
+        if len(nonzero[0])>0:
+            min_y = np.min(nonzero[0])
+            max_y = np.max(nonzero[0])
+        else:
+            min_y = 0
+            max_y = board_np.shape[0]-1
+        if len(nonzero[1])>0:
+            min_x = np.min(nonzero[1])
+            max_x = np.max(nonzero[1])
+        else:
+            min_x = 0
+            max_x = board_np.shape[1]-1
         board_np = board_np[min_y:max_y+1, min_x:max_x+1]
     return [
         ''.join('*' if c else '.' for c in line)

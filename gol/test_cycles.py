@@ -30,7 +30,9 @@ def get_min_on_cells(board_cycle):
 
     return np.min(counts_on_cells)
 
-def print_patterns(board_cycle, all=False):
+def print_patterns(board_cycle, all=False, first_filepath=None):
+    first_board = board_cycle[0]
+    first_pattern_str = '\n'.join(numpy_to_stars(first_board, crop=True))
     if all:
         for c,b in enumerate(board_cycle, start=1):
             pattern_str = '\n'.join(numpy_to_stars(b, crop=True))
@@ -38,9 +40,11 @@ def print_patterns(board_cycle, all=False):
             print(pattern_str)
             print()
     else:
-        first_board = board_cycle[0]
-        pattern_str = '\n'.join(numpy_to_stars(first_board, crop=True))
-        print(pattern_str)
+        print(first_pattern_str)
+    if first_filepath is not None:
+        with open(first_filepath, 'w') as fout:
+            fout.write(first_pattern_str)
+    return first_pattern_str
 
 def identify_pattern(board_cycle):
     for b in board_cycle:
@@ -59,7 +63,9 @@ def get_board_cycle_period(
         torus=True,
         use_fft = False,
         torch_device = None,
-        animate = False
+        min_cycle_period_to_report = 0,
+        animate_if_new = False,
+        save_to_file_if_new = False
     ):
 
     if use_random_seed:
@@ -95,21 +101,36 @@ def get_board_cycle_period(
             if np.all(next_board == b_iter):
                 if i>0:
                     board_cycle = board_cycle[i:]
-                if animate:
+
+                # identify pattern
+                pattern_name = identify_pattern(board_cycle)
+
+                if animate_if_new and pattern_name:
+                    cycle_period = len(board_cycle)
+                    print('^^^^^^^^^^^^^^^^^^^^^^^^^^^')
+                    print('FOUND NEW PATTERN CYCLE!')
+                    print('Cycle period:', cycle_period)
                     print('Min alive cells:', get_min_on_cells(board_cycle))
 
-                    # print patterns
-                    print_patterns(board_cycle, all=False)
+                    if cycle_period >= min_cycle_period_to_report:
+                        if save_to_file_if_new:
+                            first_filepath = f'output/cycles/size{size}_seed{init_state}.LIFS'
+                        else:
+                            first_filepath = None
 
-                    # identify pattern
-                    identify_pattern(board_cycle)
+                        # print patterns
+                        print_patterns(
+                            board_cycle,
+                            all=False,
+                            first_filepath=first_filepath
+                        )
 
-                    automata.animate(interval=500)
+                        automata.animate(interval=500)
                 return board_cycle, len(board_cycle)
         else:
             board_cycle.append(next_board)
 
-def run_cucles_analysis(
+def run_cycles_analysis(
         size = 4,
         iterations = 100,
         sample_size = None,
@@ -172,17 +193,42 @@ def generate_analysis(size=2):
 
     if use_random_seed:
         # sample `sample_size` states for size > 4 [8,16,...]
-        run_cucles_analysis(
+        run_cycles_analysis(
             size = size,
             iterations = 100,
             sample_size = 10000
         )
     else:
         # exaustive analyses for size in [2,4]
-        run_cucles_analysis(
+        run_cycles_analysis(
             size = size,
             iterations = 100,
         )
+
+def find_cycles(
+        size=8,
+        min_cycle_period_to_report=132,
+        iters = 1000,
+        torch_device = None
+    ):
+
+    for _ in tqdm(range(iters)):
+
+        init_state = np.random.randint(np.iinfo(np.int32).max)
+
+        cycle, period = get_board_cycle_period(
+            size = size,
+            init_state = init_state,
+            use_random_seed = True,
+            iterations = 100,
+            torus = True,
+            use_fft = False,
+            torch_device = torch_device,
+            min_cycle_period_to_report = min_cycle_period_to_report,
+            animate_if_new = True,
+            save_to_file_if_new = True
+        )
+
 
 if __name__ == "__main__":
 
@@ -190,15 +236,22 @@ if __name__ == "__main__":
 
     # test_get_board(size)
 
+    find_cycles(
+        size = size,
+        min_cycle_period_to_report = 8,
+        iters = 1000,
+        torch_device = 'mps'
+    )
+
     # generate_analysis(size)
 
     # visualize cycle animation for specific size and init state
-    get_board_cycle_period(
-        size = size,
-        init_state = 27,
-        use_random_seed = size not in [2,4],
-        animate=True
-    )
+    # get_board_cycle_period(
+    #     size = size,
+    #     init_state = 177,
+    #     use_random_seed = size not in [2,4],
+    #     animate_if_new=True
+    # )
 
 
     '''
