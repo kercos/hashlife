@@ -15,9 +15,13 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
   ```
   python -m gol.benchmark
   ```
-- test hl/pure
+- test hl/pure consistency
   ```
   python -m gol.test_hl_pure
+  ```
+- test hl jumps
+  ```
+  python -m gol.test_hl_jumps
   ```
 - test golly
   ```
