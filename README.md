@@ -57,6 +57,9 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
 - [rivesunder (carle)](https://github.com/rivesunder/carle)
 
 ## TODO
+- see other life catalogues
+  - https://catagolue.hatsya.com/census
+  - https://conwaylife.com/wiki/Main_Page
 - see `moritztng` (or remove if not relevant)
 
 ## CONTACTS
