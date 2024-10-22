@@ -39,24 +39,33 @@ def get_min_on_cells(board_cycle):
 
     return np.min(counts_on_cells)
 
-def print_patterns(board_cycle, all=False, first_filepath=None):
+def print_patterns(board_cycle, all=False, pattern_filepath=None):
     '''
-    Print star pattern(s) in board_cycle (list of boards)
+    Print min size (default) or all star pattern(s) in board_cycle (list of boards)
+    If pattern_filepath is provided save the min size pattern
     '''
-    first_board = board_cycle[0]
-    first_pattern_str = '\n'.join(numpy_to_stars(first_board, crop=True))
     if all:
         for c,b in enumerate(board_cycle, start=1):
             pattern_str = '\n'.join(numpy_to_stars(b, crop=True))
             print(f'-{c}-')
             print(pattern_str)
             print()
-    else:
-        print(first_pattern_str)
-    if first_filepath is not None:
-        with open(first_filepath, 'w') as fout:
-            fout.write(first_pattern_str)
-    return first_pattern_str
+
+    all_pattern_str = []
+    for c,b in enumerate(board_cycle, start=1):
+        pattern_str = '\n'.join(numpy_to_stars(b, crop=True))
+        all_pattern_str.append(pattern_str)
+    len_pattern_str = [(len(p),p) for p in all_pattern_str]
+    min_len_pattern_str = sorted(len_pattern_str, key=lambda lp: lp[0])[0] # get smallest
+    pattern_str = min_len_pattern_str[1] # get pattern from pair
+    if not all:
+        print(f'---')
+        print(pattern_str)
+        print()
+    if pattern_filepath is not None:
+        with open(pattern_filepath, 'w') as fout:
+            fout.write(pattern_str)
+    return pattern_str
 
 def identify_pattern(board_cycle):
     '''
@@ -80,6 +89,7 @@ def get_board_cycle_period(
         use_fft = False,
         torch_device = None,
         min_cycle_period_to_report = 0,
+        print_all_patterns = False,
         identify = False,
         force_animation = False,
         animate_if_new = False,
@@ -135,15 +145,15 @@ def get_board_cycle_period(
 
                     if min_cycle_period_to_report is not None and cycle_period >= min_cycle_period_to_report:
                         if save_to_file_if_new:
-                            first_filepath = f'output/cycles/size{size}_seed{init_state}.LIFS'
+                            pattern_filepath = f'output/cycles/size{size}_seed{init_state}.LIFS'
                         else:
-                            first_filepath = None
+                            pattern_filepath = None
 
                         # print patterns
                         print_patterns(
                             board_cycle,
-                            all=False,
-                            first_filepath=first_filepath
+                            all = print_all_patterns,
+                            pattern_filepath = pattern_filepath
                         )
 
                         automata.animate(interval=500)
@@ -268,6 +278,7 @@ def visualize_init_state(size=8, init_state=27, torch_device=None):
         init_state = init_state,
         use_random_seed = size not in [2,4],
         force_animation = True,
+        print_all_patterns = False,
         torch_device = torch_device
     )
 
@@ -291,7 +302,7 @@ if __name__ == "__main__":
     '''visualize cycle animation for specific size and init state'''
     visualize_init_state(
         size = size,
-        init_state = 27, # size must be 8 for init_state = 27
+        init_state = 2833, # size must be 8 for init_state = 2833
         torch_device = torch_device
     )
 
