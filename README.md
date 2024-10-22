@@ -31,10 +31,11 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
   ```
   python -m gol.test_golly
   ```
-- process lexicon (https://conwaylife.com/ref/lexicon/lex_home.htm)
+- process lexicon (`input/lex_asc` below)
   ```
   python -m gol.process_lexicon
   ```
+  TODO: see also https://conwaylife.com/wiki
 
 ## Project Structure
 - `pure`: implementation with efficient `numpy`/`pytorch` via `fft` and `conv2d` derived from [njbbaer](https://gist.github.com/njbbaer/4da02e2960636d349e9bae7ae43c213c).
@@ -43,8 +44,7 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
 
 ## input/output dirs (gitignored)
 - `input`
-  - `hl_imgs` (hl)
-  - `hl_lifep` (hl)
+  `lex_asc`: from https://conwaylife.com/ref/lexicon/lex_home.htm
 - `output`
   - `manual`: manual tests for `pure`
   - `base`: output for `test` (pure/hl)
