@@ -82,6 +82,7 @@ def identify_pattern(board_cycle):
 
 def get_board_cycle_period(
         size = 2,
+        rule = None,
         init_state = 7, # int (binary representation of matrix) or seed (random matrix)
         use_random_seed = False,
         jump_to_generation = 100,
@@ -108,6 +109,7 @@ def get_board_cycle_period(
     # init gol board and rule
     board, neighborhood, rule = init_gol_board_neighborhood_rule(
         size = size,
+        rule = rule,
         initial_state = board_np
     )
 
@@ -163,6 +165,7 @@ def get_board_cycle_period(
 
 def run_cycles_analysis(
         size = 4,
+        rule = None,
         jump_to_generation = 100,
         sample_size = None,
         torus = True,
@@ -194,6 +197,7 @@ def run_cycles_analysis(
     for init_state in tqdm(range(tot_states)):
         cycle, period = get_board_cycle_period(
             size = size,
+            rule = rule,
             init_state = init_state,
             use_random_seed = use_random_seed,
             jump_to_generation = jump_to_generation,
@@ -225,7 +229,11 @@ def test_get_board(n=15):
     a = get_board_int(n=15, size=2) # size=2 means 2x2 = 4 cells matrix with 16 configurations
     print(a)
 
-def generate_analysis(size=2, torch_device=None):
+def generate_analysis(
+        size = 2,
+        rule = None,
+        torch_device = None
+    ):
     '''
     Generate exaustive (or partial) analysis
     '''
@@ -235,6 +243,7 @@ def generate_analysis(size=2, torch_device=None):
         # sample `sample_size` states for size > 4 [8,16,...]
         run_cycles_analysis(
             size = size,
+            rule = rule,
             jump_to_generation = 100,
             sample_size = 10000,
             torch_device = torch_device
@@ -243,12 +252,14 @@ def generate_analysis(size=2, torch_device=None):
         # exaustive analyses for size in [2,4]
         run_cycles_analysis(
             size = size,
+            rule = rule,
             jump_to_generation = 100,
             torch_device = torch_device
         )
 
 def identify_patterns(
-        size=8,
+        size = 8,
+        rule = None,
         min_cycle_period_to_report=132,
         iters = 1000,
         torch_device = None
@@ -260,6 +271,7 @@ def identify_patterns(
 
         cycle, period = get_board_cycle_period(
             size = size,
+            rule = rule,
             init_state = init_state,
             use_random_seed = True,
             jump_to_generation = 100,
@@ -272,9 +284,15 @@ def identify_patterns(
             save_to_file_if_new = True
         )
 
-def visualize_init_state(size=8, init_state=27, torch_device=None):
+def visualize_init_state(
+        size = 8,
+        rule = None,
+        init_state = 27,
+        torch_device = None
+    ):
     get_board_cycle_period(
         size = size,
+        rule = rule,
         init_state = init_state,
         use_random_seed = size not in [2,4],
         force_animation = True,
@@ -288,6 +306,10 @@ if __name__ == "__main__":
     # test_get_board(size)
 
     size = 8
+
+    rule = None # default is GoL
+    # rule = [[2, 3],[3, 6]] # HighLife
+
     torch_device = None # None for numpy (otherwise 'mps' or 'torch')
 
     '''
@@ -296,12 +318,14 @@ if __name__ == "__main__":
     '''
     # generate_analysis(
     #     size = size,
+    #     rule = rule,
     #     torch_device = torch_device
     # )
 
     '''visualize cycle animation for specific size and init state'''
     visualize_init_state(
         size = size,
+        rule = rule,
         init_state = 2833, # size must be 8 for init_state = 2833
         torch_device = torch_device
     )
@@ -309,6 +333,7 @@ if __name__ == "__main__":
     '''identify interesting patterns starting with board of given size'''
     # identify_patterns(
     #     size = size,
+    #     rule = rule,
     #     min_cycle_period_to_report = 3,
     #     iters = 100,
     #     torch_device = torch_device
@@ -334,5 +359,19 @@ if __name__ == "__main__":
     ---
     size=2 (2x2=4) - exhaustive search (16 configurations)
         Period: 1, States (16): [0, 1, 2, 3, '...', 11, 12, 13, 15]
+    '''
+
+    '''
+    HighLife
+    size=8 (8x8=64) - sample: 10000 (18446744073709551616 configurations)
+        Period: 52, States (2): [6243, 7478]
+        Period: 32, States (154): [20, 116, 190, 196, '...', 9705, 9713, 9724, 9833]
+        Period: 12, States (1): [5414]
+        Period: 9, States (15): [30, 1575, 2298, 2862, '...', 5517, 6845, 8141, 9834]
+        Period: 8, States (84): [249, 270, 322, 652, '...', 9660, 9695, 9820, 9982]
+        Period: 6, States (14): [556, 1230, 1560, 3635, '...', 7182, 7837, 8634, 8682]
+        Period: 4, States (12): [514, 3756, 4446, 5151, '...', 7390, 8166, 8731, 9945]
+        Period: 2, States (707): [19, 23, 28, 41, '...', 9933, 9976, 9991, 9994]
+        Period: 1, States (9011): [0, 1, 2, 3, '...', 9996, 9997, 9998, 9999]
     '''
 

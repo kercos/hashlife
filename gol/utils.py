@@ -5,9 +5,10 @@ from matplotlib import pyplot as plt
 
 def init_gol_board_neighborhood_rule(
         size = 16,
+        rule = None,
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
-        seed = 123,
+        seed = 123
     ):
 
     shape = (size, size)
@@ -43,10 +44,11 @@ def init_gol_board_neighborhood_rule(
     )
 
     # GoL Rule (same as Conway class):
-    rule = [
-        [2, 3], # 'on->on': (2,3): "on" neighbours (can't contain 0)
-        [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
-    ]
+    if rule is None:
+        rule = [
+            [2, 3], # 'on->on': (2,3): "on" neighbours (can't contain 0)
+            [3]     # 'off->on': (3,): "on" neighbours (can't contain 0)
+        ]
 
     # GoL Rule with neighborhood all ones:
     # neighborhood = np.ones((3,3))
