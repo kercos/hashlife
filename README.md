@@ -2,6 +2,21 @@
 
 Explore emerging patterns in GoL, something along [these lines](https://softologyblog.wordpress.com/2019/09/03/automatic-detection-of-interesting-cellular-automata/) - not clear if it has been investigated thoroughly so far.
 
+## Setup
+- activate env
+  ```
+  python3 -m venv .venv
+  source .venv/bin/activate
+  ```
+- install requirements (after env is activated)
+  ```
+  pip install -r requirements.txt
+  ```
+- you may need PyQt5 in addition to visualize animation (e.g., under Ubuntu)
+  ```
+  pip install PyQt5
+  ```
+
 ## Run the code
 - main pure
   ```
@@ -44,7 +59,8 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
 
 ## input/output dirs (gitignored)
 - `input`
-  `lex_asc`: from https://conwaylife.com/ref/lexicon/lex_home.htm
+  - `lifep`: from https://github.com/johnhw/hashlife/tree/master/lifep
+  - `lex_asc`: from https://conwaylife.com/ref/lexicon/lex_home.htm
 - `output`
   - `manual`: manual tests for `pure`
   - `base`: output for `test` (pure/hl)

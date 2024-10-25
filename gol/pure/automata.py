@@ -118,13 +118,15 @@ class Automata:
                 self.np_conv2d_boundary = 'circular' if self.torus else 'fill'
 
 
-    def get_board_numpy(self, change_to_bool=False):
+    def get_board_numpy(self, change_to_bool=False, change_to_int=False):
         if self.use_torch:
             result = self.board.cpu().detach().numpy()
         else:
             result = self.board.copy()
         if change_to_bool:
             result = result.astype(bool)
+        elif change_to_int:
+            result = result.astype(int)
         return result
 
 
