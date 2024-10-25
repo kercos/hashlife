@@ -1,20 +1,31 @@
 from gol.main_pure import main_gol
 
 ##############
-# BENCHMARKS
+# BENCHMARKS (Pure) 1024x1024 grid, 1000 iters, torus=True
 #
-# Benchmark (conv2D): 1024x1024 grid, 1000 iters, torus=True
+# Conv2D:
 # - Numpy (M1):                   31 Hz
-# - Torch mps (M1):              302 Hz
+# - Torch mps (M1):              302 Hz (? --> 199 Hz)
 # - Torch cuda (RTX 3090 Ti):   2866 Hz
 #
-# Benchmark (fft): 1024x1024 grid, 1000 iters, torus=True
+# Conv2D-POLY:
+# - Numpy (M1):                   32 Hz
+# - Torch mps (M1):              369 Hz
+# - Torch cuda (RTX 3090 Ti):   ____ Hz
+#
+# FFT
 # (fft is less efficient but you get torus for free)
 # - Numpy (M1):                   24 Hz
 # - Torch mps (M1):              217 Hz
 # - Torch cuda (RTX 3090 Ti):   2459 Hz
 #
-# Benchmark (golly): 16 grid, 1000 iters, torus=True
+# FFT-POLY
+# - Numpy (M1):                   24 Hz
+# - Torch mps (M1):              355 Hz
+# - Torch cuda (RTX 3090 Ti):   ____ Hz
+#
+# BENCHMARKS (Golly) 16x16 grid, 1000 iters, torus=True
+#
 # - Size 16 Iters 1000 cells in 0.0 s 261097 Hz (board) 0.07 BHz (cell)
 # TODO: Fatal error: Illegal whitespace after count (for board > 16)
 ##############
@@ -65,7 +76,8 @@ def benchmark_pure():
         animate = False, # benchmark if False
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = None, # 'test.png' '100k.npy'
-        use_fft = False, # conv2d (more efficient)
+        use_fft = True, # conv2d (more efficient)
+        use_poly_update = True,
         # torch_device = 'cpu', # torch cpu
         # torch_device = 'cuda', # torch cuda
         torch_device = 'mps', # torch mps

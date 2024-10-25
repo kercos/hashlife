@@ -21,6 +21,7 @@ class Automata:
     def __init__(
             self, board, neighborhood, rule, torus=True,
             use_fft = False, # otherwise conv2d
+            use_poly_update = False, # life_update, life_update_torch
             torch_device = None,
     ):
 
@@ -53,7 +54,10 @@ class Automata:
         self.torch_device = torch_device
         self.use_torch = torch_device is not None
 
-        if use_fft:
+        self.use_poly_update = use_poly_update
+
+        self.use_fft = use_fft
+        if self.use_fft:
             nh, nw = self.neighborhood.shape # say (3,3) for Conway's GoL
 
             # create the FFT kernal (init as zero)
@@ -74,7 +78,7 @@ class Automata:
             torch_device = torch.device(torch_device)
             torch.set_default_device(torch_device)
 
-            if use_fft:
+            if self.use_fft:
                 # less efficient (buth worth trying)
                 self.torch_conv_func = self.torch_conv_fft
                 self.board = torch.from_numpy(self.board).to(torch_device)
@@ -104,7 +108,7 @@ class Automata:
                     self.conv2d_model.weight[0,0] = self.neighborhood
         else:
             # numpy
-            if use_fft:
+            if self.use_fft:
                 # less efficient (buth worth mentioning)
                 self.numpy_conv_func = self.np_conv_fft
                 self.kernal_ft = np_fft2(self.kernal) # same shape but floating numbers
@@ -269,6 +273,24 @@ class Automata:
         self.np_apply_rule(count_ones_neighbours)
 
     '''
+    Polynomial life update via numpy
+    Credits to Raymond Baranski (Alex)
+    '''
+    def np_update_board_poly(self):
+        counts = self.numpy_conv_func()
+        self.board = (
+            # np.sign(-1*(1-x)*(y-2.5)*(y-3.5)-x*(y-1.5)*(y-3.5))
+            np.sign(
+                -counts ** 2
+                - self.board * counts
+                + 3.5 * self.board
+                + 6 * counts
+                - 8.75
+            )
+            +1
+        ) /2
+
+    '''
     Main 1-step operation (torch version)
     Usign FFT (not as efficient as torch.nn.functional.conv2d)
     '''
@@ -377,14 +399,58 @@ class Automata:
         # apply rule (update board inplace)
         self.torch_apply_rule(count_ones_neighbours)
 
-    def advance(self,iterations=1):
+    '''
+    Step update function using torch and poly
+    Credits to Raymond Baranski (Alex)
+    '''
+    def torch_update_board_poly(self):
+        counts = self.torch_conv_func()
+        self.board = (
+            # np.sign(-1*(1-x)*(y-2.5)*(y-3.5)-x*(y-1.5)*(y-3.5))
+            torch.sign(
+                -counts ** 2
+                - self.board * counts
+                + 3.5 * self.board
+                + 6 * counts
+                - 8.75
+            )
+            +1
+        ) /2
+
+    '''
+    Step update function (general)
+    '''
+    def update_board(self):
         if self.use_torch:
-            for _ in range(iterations):
+            if self.use_poly_update:
+                self.torch_update_board_poly()
+            else:
                 self.torch_update_board()
         else:
-            # use numpy
-            for _ in range(iterations):
+            if self.use_poly_update:
+                self.np_update_board_poly()
+            else:
                 self.np_update_board()
+
+    '''
+    Multi-Step update function (general)
+    '''
+    def advance(self,iterations=1):
+        if self.use_torch:
+            if self.use_poly_update:
+                for _ in range(iterations):
+                    self.torch_update_board_poly()
+            else:
+                for _ in range(iterations):
+                    self.torch_update_board()
+        else:
+            # use numpy
+            if self.use_poly_update:
+                for _ in range(iterations):
+                    self.np_update_board_poly()
+            else:
+                for _ in range(iterations):
+                    self.np_update_board()
 
     '''
     Main Benchmark to run it as fast as possible (without visualizing it)
@@ -402,19 +468,22 @@ class Automata:
 
         hz_B_cell = hz * self.size * self.size / 10 ** 9 # Billions
 
-        print(
-            "Performed", iterations,
-            "iterations of", self.shape,
-            f"cells in {ellapsed:.1f} s",
-            f"{hz:.0f} Hz (board)",
-            f"{hz_B_cell:.2f} BHz (cell)"
-        )
+        device_str = f'Torch-{self.torch_device}' if self.torch_device else 'Numpy'
+        conv2d_fft_poly_str = 'FFT' if self.use_fft else 'Conv2D'
+        if self.use_poly_update:
+            conv2d_fft_poly_str += '-POLY'
+        shape_str = f'{self.size}x{self.size}'
 
-    def update_board(self):
-        if self.use_torch:
-            self.torch_update_board()
-        else:
-            self.np_update_board()
+        print(
+            f'Device: {device_str}\n',
+            f'Benchmark {conv2d_fft_poly_str}:',
+            f'{shape_str} grid,',
+            f'{iterations} iters,',
+            f'torus={self.torus}\n',
+            f'{hz:.0f} Hz (board)\n',
+            f'{ellapsed:.1f} s (cells)\n',
+            f'{hz_B_cell:.2f} BHz (per cell)'
+        )
 
     '''
     Show grid in real time (rely on numpy for now)

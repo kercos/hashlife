@@ -4,6 +4,7 @@ import scipy
 from tqdm import tqdm
 from gol.pure.automata import Automata
 from gol.main_pure import init_gol_board_neighborhood_rule
+import torch
 
 def life_update(x,y):
     '''
@@ -15,6 +16,13 @@ def life_update(x,y):
     return (
         # np.sign(-1*(1-x)*(y-2.5)*(y-3.5)-x*(y-1.5)*(y-3.5))
         np.sign(-y**2 - x*y + 3.5*x + 6*y - 8.75)
+        +1
+    ) /2
+
+def life_update_torch(x,y):
+    return (
+        # np.sign(-1*(1-x)*(y-2.5)*(y-3.5)-x*(y-1.5)*(y-3.5))
+        torch.sign(-y**2 - x*y + 3.5*x + 6*y - 8.75)
         +1
     ) /2
 

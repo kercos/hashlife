@@ -13,6 +13,7 @@ def main_gol(
         show_last_frame = False, # only applicable for benchmark
         save_last_frame = None, # only applicable for benchmark
         use_fft = False,
+        use_poly_update = False,
         torch_device = None,
     ):
 
@@ -31,6 +32,7 @@ def main_gol(
         rule = rule,
         torus = torus,
         use_fft = use_fft,
+        use_poly_update = use_poly_update,
         torch_device = torch_device,
     )
 
@@ -126,6 +128,7 @@ def reproduce_animation():
         torus = True,
         animate = True,
         use_fft = False, # False for conv2d
+        use_poly_update = True,
         torch_device = None # use None for (numpy)
     )
 
