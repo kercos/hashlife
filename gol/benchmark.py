@@ -21,7 +21,7 @@ from gol.main_pure import main_gol
 #
 # FFT-POLY
 # - Numpy (M1):                   24 Hz
-# - Torch mps (M1):              355 Hz
+# - Torch mps (M1):              362 Hz
 # - Torch cuda (RTX 3090 Ti):   3094 Hz
 #
 # BENCHMARKS (Golly) 16x16 grid, 1000 iters, torus=True
