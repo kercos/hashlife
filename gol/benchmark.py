@@ -6,23 +6,23 @@ from gol.main_pure import main_gol
 # Conv2D:
 # - Numpy (M1):                   31 Hz
 # - Torch mps (M1):              302 Hz (? --> 199 Hz)
-# - Torch cuda (RTX 3090 Ti):   2866 Hz
+# - Torch cuda (RTX 3090 Ti):   2915 Hz
 #
 # Conv2D-POLY:
 # - Numpy (M1):                   32 Hz
 # - Torch mps (M1):              369 Hz
-# - Torch cuda (RTX 3090 Ti):   ____ Hz
+# - Torch cuda (RTX 3090 Ti):   3565 Hz
 #
 # FFT
 # (fft is less efficient but you get torus for free)
 # - Numpy (M1):                   24 Hz
 # - Torch mps (M1):              217 Hz
-# - Torch cuda (RTX 3090 Ti):   2459 Hz
+# - Torch cuda (RTX 3090 Ti):   2472 Hz
 #
 # FFT-POLY
 # - Numpy (M1):                   24 Hz
 # - Torch mps (M1):              355 Hz
-# - Torch cuda (RTX 3090 Ti):   ____ Hz
+# - Torch cuda (RTX 3090 Ti):   3094 Hz
 #
 # BENCHMARKS (Golly) 16x16 grid, 1000 iters, torus=True
 #
