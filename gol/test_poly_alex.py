@@ -14,7 +14,8 @@ def poly_solve(x,y):
     '''
     return int(
         (
-            np.sign(-1*(1-x)*(y-2.5)*(y-3.5)-x*(y-1.5)*(y-3.5))
+            # np.sign(-1*(1-x)*(y-2.5)*(y-3.5)-x*(y-1.5)*(y-3.5))
+            np.sign(-y**2 - x*y + 3.5*x + 6*y - 8.75)
             +1
         )
         /2
@@ -23,13 +24,13 @@ def poly_solve(x,y):
     return
 
 def poly_advance(board, neighborhood):
+    size = board.shape[0]
     counts_int = scipy.signal.convolve2d(
             board,
             neighborhood,
             mode = 'same',
             boundary = 'fill' # 'circular' if torus, 'fill' if strict
         )
-    size = board.shape[0]
     counts_int = np.rint(counts_int).astype(int)
     new_board = np.zeros_like(counts_int, dtype=int)
     for i in range(size):
@@ -80,7 +81,7 @@ def test(size, seed):
 
 
 if __name__ == "__main__":
-    size = 4
+    size = 10
     for i in tqdm(range(1000)):
         if not test(size=3, seed=1):
             break
