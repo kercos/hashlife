@@ -19,14 +19,12 @@ def life_update(x,y):
     ) /2
 
 def poly_advance(board, neighborhood):
-    size = board.shape[0]
     counts_int = scipy.signal.convolve2d(
-            board,
-            neighborhood,
-            mode = 'same',
-            boundary = 'fill' # 'circular' if torus, 'fill' if strict
-        )
-    counts_int = np.rint(counts_int).astype(int)
+        board,
+        neighborhood,
+        mode = 'same',
+        boundary = 'fill' # 'circular' if torus, 'fill' if strict
+    )
     new_board = life_update(board, counts_int)
     return new_board, counts_int
 
