@@ -129,7 +129,7 @@ def process_lexicon(filesystem_write=False, verbose=True):
         print(f'Found {PATTERN_COUNTER} patterns')
         print(f'Found {NON_PATTERN_COUNTER} NON-patterns (other blocks)')
     else:
-        print(f'Found {PATTERN_COUNTER} patterns')
+        print(f'Read {PATTERN_COUNTER} patterns from {LEX_ASC_PATH}')
     assert num_blocks == REF_COUNTER + PATTERN_COUNTER + NON_PATTERN_COUNTER
 
     return all_patterns

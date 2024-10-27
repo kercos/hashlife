@@ -1,4 +1,4 @@
-from gol.main_pure import main_gol
+from gol.main_pure import main_pure
 
 ##############
 # BENCHMARKS (Pure) 1024x1024 grid, 1000 iters, torus=True
@@ -62,7 +62,7 @@ def benchmark_golly():
 def benchmark_pure():
     # CONWAY GAME OF LIFE
     # see Automata.benchmark
-    main_gol(
+    main_pure(
         size = 2**10, # 2**10 == 1024,
         initial_state = 'random', # 'square', 'filenmae.npy'
         density = 0.5, # only used with initial_state=='random'

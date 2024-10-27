@@ -33,8 +33,8 @@ def get_min_on_cells(board_cycle):
     Get minimum alive cells in either element of the list of boards in board_cycle
     '''
     counts_on_cells = [
-        np.count_nonzero(board_np)
-        for board_np in board_cycle
+        np.count_nonzero(board)
+        for board in board_cycle
     ]
 
     return np.min(counts_on_cells)
@@ -83,7 +83,7 @@ def identify_pattern(board_cycle):
 def get_board_cycle_period(
         size = 2,
         rule = None,
-        init_state = 7, # int (binary representation of matrix) or seed (random matrix)
+        init_state = 7, # int (binary representation of matrix) or seed (random matrix) or 'squareN' where N is an int
         use_random_seed = False,
         jump_to_generation = 100,
         torus=True,
@@ -100,18 +100,27 @@ def get_board_cycle_period(
     Analyze period of given board
     '''
 
-    if use_random_seed:
-        board_np = get_board_seed(seed=init_state, size=size)
+    if type(init_state) is int:
+        if use_random_seed:
+            board = get_board_seed(seed=init_state, size=size)
+        else:
+            board = get_board_int(n=init_state, size=size)
+
+        # init gol board and rule
+        board, neighborhood, rule = init_gol_board_neighborhood_rule(
+            size = size,
+            rule = rule,
+            initial_state = board
+        )
     else:
-        board_np = get_board_int(n=init_state, size=size)
+        assert init_state.startswith('square'), \
+            'if `init_state` is not int it should be a string starting with "square" (e.g., "sqaure2", "square3", "square4")'
+        board, neighborhood, rule = init_gol_board_neighborhood_rule(
+            size = size,
+            rule = rule,
+            initial_state = init_state # e.g., "sqaure2", "square3", "square4"
+        )
 
-
-    # init gol board and rule
-    board, neighborhood, rule = init_gol_board_neighborhood_rule(
-        size = size,
-        rule = rule,
-        initial_state = board_np
-    )
 
     # init automata
     automata = Automata(
@@ -173,7 +182,7 @@ def run_cycles_analysis(
         torch_device = None,
     ):
     '''
-    Used for generate_analysis()
+    Used for generate_cycle_analysis()
     '''
 
     assert np.log2(size) == int(np.log2(size)), 'size must be a power of 2'
@@ -229,9 +238,11 @@ def test_get_board(n=15):
     a = get_board_int(n=15, size=2) # size=2 means 2x2 = 4 cells matrix with 16 configurations
     print(a)
 
-def generate_analysis(
+def generate_cycle_analysis(
         size = 2,
         rule = None,
+        jump_to_generation = 100,
+        sample_size = 10000, # used only on random_seed  (see use_random_seed)
         torch_device = None
     ):
     '''
@@ -244,8 +255,8 @@ def generate_analysis(
         run_cycles_analysis(
             size = size,
             rule = rule,
-            jump_to_generation = 100,
-            sample_size = 10000,
+            jump_to_generation = jump_to_generation,
+            sample_size = sample_size,
             torch_device = torch_device
         )
     else:
@@ -253,7 +264,7 @@ def generate_analysis(
         run_cycles_analysis(
             size = size,
             rule = rule,
-            jump_to_generation = 100,
+            jump_to_generation = jump_to_generation,
             torch_device = torch_device
         )
 
@@ -284,7 +295,7 @@ def identify_patterns(
             save_to_file_if_new = True
         )
 
-def visualize_init_state(
+def visualize_cycle(
         size = 8,
         rule = None,
         init_state = 27,
@@ -307,8 +318,9 @@ if __name__ == "__main__":
 
     size = 8
 
-    rule = None # default is GoL
+    rule = None # default is GoL [[2, 3],[3]]
     # rule = [[2, 3],[3, 6]] # HighLife
+    # rule = [[2, 3],[1,3]] # square
 
     torch_device = None # None for numpy (otherwise 'mps' or 'torch')
 
@@ -316,17 +328,18 @@ if __name__ == "__main__":
     Get compact analysis of periods cycles for given size
     (See printout below for size 2, 4, 8)
     '''
-    # generate_analysis(
+    # generate_cycle_analysis(
     #     size = size,
     #     rule = rule,
     #     torch_device = torch_device
     # )
 
     '''visualize cycle animation for specific size and init state'''
-    visualize_init_state(
+    visualize_cycle(
         size = size,
         rule = rule,
         init_state = 2833, # size must be 8 for init_state = 2833
+        # init_state = 'square2', # try with size=16
         torch_device = torch_device
     )
 
@@ -339,7 +352,7 @@ if __name__ == "__main__":
     #     torch_device = torch_device
     # )
 
-    ''' Printout of generate_analysis for some sizes (8, 4, 2)
+    ''' Printout of generate_cycle_analysis for some sizes (8, 4, 2)
     size=8 (8x8=64) - sample: 1000 (18446744073709551616 configurations)
         Period: 132, States (89): [177, 197, 739, 881, '...', 9782, 9808, 9905, 9926]
         Period: 48, States (210): [5, 7, 32, 87, '...', 9804, 9820, 9830, 9988]

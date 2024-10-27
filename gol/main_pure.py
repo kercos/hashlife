@@ -2,8 +2,9 @@ import numpy as np
 from gol.pure.automata import Automata
 from gol.utils import init_gol_board_neighborhood_rule
 
-def main_gol(
+def main_pure(
         size = 16,
+        rule = None, # default to GoL
         initial_state = 'random', # 'random', 'square', 'filename.npy'
         density = 0.5, # only used on initial_state=='random'
         seed = 123,
@@ -20,6 +21,7 @@ def main_gol(
     # init gol board and rule
     board, neighborhood, rule = init_gol_board_neighborhood_rule(
         size = size,
+        rule = rule,
         initial_state = initial_state,
         density = density,
         seed = seed
@@ -55,7 +57,7 @@ def main_gol(
 
 def manual_check():
 
-    automata = main_gol(
+    automata = main_pure(
         size = 4,
         initial_state = 'random',
         density = 0.5,
@@ -74,7 +76,7 @@ def manual_check():
 def check_reproducible():
 
     def run(params):
-        return main_gol(
+        return main_pure(
             size = 4,
             initial_state = 'random',
             density = 0.5,
@@ -119,7 +121,7 @@ def check_reproducible():
     print(f'{test_name} test succeded:', np.all(gold_state==test_state))
 
 def reproduce_animation():
-    main_gol(
+    main_pure(
         size = 16,
         initial_state = 'random',
         density = 0.5,
@@ -128,13 +130,35 @@ def reproduce_animation():
         torus = True,
         animate = True,
         use_fft = False, # False for conv2d
-        use_poly_update = True,
+        use_poly_update = False,
         torch_device = None # use None for (numpy)
     )
 
+def test_square(
+        size = 16,
+        rule = [[1,2,3],[2,3,4,5]] # GoL is [[2,3],[3]]
+    ):
+    automata = main_pure(
+        size = size,
+        rule = rule,
+        initial_state = 'square2',
+        iterations=100,
+        torus = True,
+        animate = True,
+        use_fft = False, # False for conv2d
+        use_poly_update = False,
+        torch_device = None # use None for (numpy)
+    )
+
+    # from matplotlib import pyplot as plt
+    # automata.show_current_frame('state 0', force_show=False)
+    # automata.update_board()
+    # automata.show_current_frame('state 1', force_show=False)
+    # plt.show()
+
 def main():
     # CONWAY GAME OF LIFE
-    main_gol(
+    main_pure(
         size = 2**10, # 2**10 == 1024,
         initial_state = 'random', # 'square', 'filenmae.npy'
         density = 0.5, # only used with initial_state=='random'
@@ -176,6 +200,11 @@ if __name__ == "__main__":
     Reproduce the animation which should look familiar
     '''
     reproduce_animation()
+
+    '''
+    Test square (carpet)
+    '''
+    # test_square()
 
 
 

@@ -19,9 +19,11 @@ def init_gol_board_neighborhood_rule(
             rng = np.random.default_rng(seed)
             board = rng.uniform(0, 1, shape)
             board = board < density
-        elif initial_state == 'square':
-            sq = 2 # alive square size in the middle of the board
-            assert sq % 2 == 0
+        elif initial_state.startswith('square'): # 'sqaure2', 'sqaure3', 'sqaure4'
+            if initial_state == 'square':
+                sq = 2 # alive square size in the middle of the board
+            else:
+                sq = int(initial_state.split('square')[1])
             board = np.zeros(shape)
             board[
                 size//2-sq//2:size//2+sq//2,
