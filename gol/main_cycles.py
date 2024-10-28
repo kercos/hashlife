@@ -102,13 +102,13 @@ def get_board_cycle_period(
     '''
 
     if type(init_state) is int:
-        actual_size = size - 1 if padding else size
+        actual_size = size - 2 if padding else size
         if use_random_seed:
             board = get_board_seed(seed=init_state, size=actual_size)
         else:
             board = get_board_int(n=init_state, size=actual_size)
         if padding:
-            # add extra padding to get back the board with correct size (actual_size + 1)
+            # add extra padding to get back the board with correct size (actual_size + 2)
             board = np.pad(board, 1)
 
         # init gol board and rule
@@ -198,7 +198,7 @@ def run_cycles_analysis(
     # cycle_counter = Counter()
     cycle_counter = defaultdict(list)
 
-    actual_size = size-1 if padding else size
+    actual_size = size - 2 if padding else size
 
     total_cells = actual_size * actual_size
 
@@ -237,7 +237,8 @@ def run_cycles_analysis(
         f'sample: {sample_size} ({tot_configurations} configurations)' \
         if use_random_seed \
         else f'exhaustive search ({tot_configurations} configurations)'
-    print(f'size={size} ({size}x{size}={total_cells}) - {sample_str}')
+    padding_str = '-pad' if padding else ''
+    print(f'size={size}{padding_str} ({actual_size}x{actual_size}={total_cells}) - {sample_str}')
 
     # sort it by period (biggest first)
     sorted_cycle_counts = sorted(cycle_counter.items(), key=lambda x: -x[0])
@@ -322,6 +323,7 @@ def visualize_cycle(
         rule = rule,
         init_state = init_state,
         use_random_seed = size not in [2,4],
+        identify = True,
         force_animation = True,
         print_all_patterns = False,
         torch_device = torch_device
@@ -332,7 +334,7 @@ if __name__ == "__main__":
     '''test a random board'''
     # test_get_board(size)
 
-    size = 4
+    size = 8
     padding = True # use empty frame (1 cell top, bottom, left, right of board)
 
     rule = None # default is GoL [[2, 3],[3]]
@@ -357,7 +359,7 @@ if __name__ == "__main__":
     #     size = size,
     #     padding = padding,
     #     rule = rule,
-    #     init_state = 482, # size must be 4 for init_state = 103 with padding = True
+    #     init_state = 257, # size must be 4 for init_state = 257 with padding = True
     #     # init_state = 2833, # size must be 8 for init_state = 2833
     #     # init_state = 'square2', # try with size=16
     #     torch_device = torch_device
