@@ -349,23 +349,24 @@ if __name__ == "__main__":
     Get compact analysis of periods cycles for given size
     (See printout below for size 2, 4, 8)
     '''
-    # generate_cycle_analysis(
-    #     size = size,
-    #     padding = padding,
-    #     rule = rule,
-    #     torch_device = torch_device
-    # )
-
-    '''visualize cycle animation for specific size and init state'''
-    visualize_cycle(
+    generate_cycle_analysis(
         size = size,
         padding = padding,
         rule = rule,
-        init_state = 257, # size must be 4 for init_state = 257 with padding = True
-        # init_state = 2833, # size must be 8 for init_state = 2833
-        # init_state = 'square2', # try with size=16
         torch_device = torch_device
     )
+
+    '''visualize cycle animation for specific size and init state'''
+    # visualize_cycle(
+    #     size = size,
+    #     padding = padding,
+    #     rule = rule,
+    #     # init_state = 198, # size must be 16 for init_state = 64 with padding = True
+    #     init_state = 257, # size must be 8 for init_state = 257 with padding = True
+    #     # init_state = 2833, # size must be 8 for init_state = 2833
+    #     # init_state = 'square2', # try with size=16
+    #     torch_device = torch_device
+    # )
 
     '''identify interesting patterns starting with board of given size'''
     # identify_patterns(
@@ -376,7 +377,8 @@ if __name__ == "__main__":
     #     torch_device = torch_device
     # )
 
-    ''' Printout of generate_cycle_analysis for some sizes (8, 4, 2)
+    '''
+    *Life*
     size=8 (8x8=64) - sample: 1000 (18446744073709551616 configurations)
         Period: 132, States (89): [177, 197, 739, 881, '...', 9782, 9808, 9905, 9926]
         Period: 48, States (210): [5, 7, 32, 87, '...', 9804, 9820, 9830, 9988]
@@ -399,7 +401,26 @@ if __name__ == "__main__":
     '''
 
     '''
-    HighLife
+    *Life* with padding
+    size=16-pad (14x14=196) - sample: 10000 (100433627766186892221372630771322662657637687111424552206336 configurations)
+        Period: 64, States (197): [64, 82, 140, 198, '...', 9800, 9886, 9930, 9956]
+        Period: 3, States (12): [2617, 3116, 3592, 4717, '...', 6415, 7004, 9344, 9737]
+        Period: 2, States (3764): [2, 3, 4, 6, '...', 9993, 9994, 9995, 9997]
+        Period: 1, States (6027): [0, 1, 5, 7, '...', 9991, 9996, 9998, 9999]
+    size=8-pad (6x6=36) - sample: 10000 (68719476736 configurations)
+        Period: 132, States (88): [51, 357, 582, 762, '...', 9822, 9839, 9862, 9981]
+        Period: 48, States (221): [8, 60, 106, 202, '...', 9664, 9688, 9883, 9949]
+        Period: 32, States (178): [36, 85, 111, 147, '...', 9799, 9823, 9840, 9942]
+        Period: 16, States (1): [257]
+        Period: 9, States (20): [1565, 1636, 1790, 2217, '...', 9156, 9492, 9758, 9951]
+        Period: 8, States (6): [2124, 5868, 6009, 6833, 8414, 9234]
+        Period: 6, States (160): [79, 81, 167, 223, '...', 9648, 9710, 9795, 9861]
+        Period: 2, States (811): [2, 9, 11, 19, '...', 9928, 9929, 9948, 9966]
+        Period: 1, States (8515): [0, 1, 3, 4, '...', 9996, 9997, 9998, 9999]
+    '''
+
+    '''
+    *HighLife*
     size=8 (8x8=64) - sample: 10000 (18446744073709551616 configurations)
         Period: 52, States (2): [6243, 7478]
         Period: 32, States (154): [20, 116, 190, 196, '...', 9705, 9713, 9724, 9833]
