@@ -222,13 +222,13 @@ def numpy_to_life_106(board_np, filepath):
 '''
 Convert board to RLE
 '''
-def numpy_to_rle(board_np, filepath):
+def numpy_to_rle(board_np, filepath=None):
     # see http://www.mirekw.com/ca/ca_files_formats.html
     from gol.hl.lifeparsers import write_rle
 
     pts = get_board_pts(board_np, only_alive=True)
     size = board_np.shape[0]
-    write_rle(fixed_size=size, filepath=filepath, pts=pts)
+    return write_rle(fixed_size=size, filepath=filepath, pts=pts)
 
 
 if __name__ == "__main__":

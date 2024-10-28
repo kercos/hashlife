@@ -126,23 +126,29 @@ def to_rle(pts, fixed_size=None):
 def write_rle(filepath, pts, fixed_size=None, torus=True, rule='B3/S23', comments=[]):
     """Write a point list to a file, with an optional comment block"""
     rle, (x, y) = to_rle(pts, fixed_size=fixed_size)
-    f = open(filepath, "w")
+
+    lines = []
 
     # size header
     if torus:
-        header = f'x = {x}, y = {y}, rule = {rule}:T{x},{y}'
+        header = f'x = {x}, y = {y}, rule = {rule}:T{x},{y}\n'
     else:
-        header = f'x = {x}, y = {y}, rule = {rule}'
-    f.write(header)
-    f.write("\n")
+        header = f'x = {x}, y = {y}, rule = {rule}\n'
+    lines.append(header)
     # comments
     for comment in comments:
-        f.write(f"#C {comment}\n")
+        lines.append(f"#C {comment}\n")
 
     # rle, 70 char max width
     rle = textwrap.fill(rle, 70)
-    f.write(rle)
-    f.close()
+    lines.append(rle)
+
+    # write to file
+    if filepath is not None:
+        with open(filepath, 'w') as fout:
+            fout.writelines(lines)
+
+    return lines
 
 
 def rle_string(pts, comments=[]):

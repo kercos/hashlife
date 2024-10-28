@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 from gol.main_pure import init_gol_board_neighborhood_rule
 from gol.main_pure import Automata
-from gol.utils import numpy_to_stars
+from gol.utils import numpy_to_stars, numpy_to_rle
 from gol.process_lexicon import get_lex_patterns
 
 NAME_PATTERN = get_lex_patterns()
@@ -61,7 +61,9 @@ def print_patterns(board_cycle, all=False, pattern_filepath=None):
     if not all:
         print(f'---')
         print(pattern_str)
-        print()
+        print(f'---RLE___')
+        rle_str = ''.join(numpy_to_rle(b))
+        print(rle_str)
     if pattern_filepath is not None:
         with open(pattern_filepath, 'w') as fout:
             fout.write(pattern_str)
@@ -347,23 +349,23 @@ if __name__ == "__main__":
     Get compact analysis of periods cycles for given size
     (See printout below for size 2, 4, 8)
     '''
-    generate_cycle_analysis(
-        size = size,
-        padding = padding,
-        rule = rule,
-        torch_device = torch_device
-    )
-
-    '''visualize cycle animation for specific size and init state'''
-    # visualize_cycle(
+    # generate_cycle_analysis(
     #     size = size,
     #     padding = padding,
     #     rule = rule,
-    #     init_state = 257, # size must be 4 for init_state = 257 with padding = True
-    #     # init_state = 2833, # size must be 8 for init_state = 2833
-    #     # init_state = 'square2', # try with size=16
     #     torch_device = torch_device
     # )
+
+    '''visualize cycle animation for specific size and init state'''
+    visualize_cycle(
+        size = size,
+        padding = padding,
+        rule = rule,
+        init_state = 257, # size must be 4 for init_state = 257 with padding = True
+        # init_state = 2833, # size must be 8 for init_state = 2833
+        # init_state = 'square2', # try with size=16
+        torch_device = torch_device
+    )
 
     '''identify interesting patterns starting with board of given size'''
     # identify_patterns(
