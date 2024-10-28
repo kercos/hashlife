@@ -22,9 +22,9 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
   ```
   python -m gol.main_pure
   ```
-- test cycles
+- main cycles
   ```
-  python -m gol.test_cycles
+  python -m gol.main_cycles
   ```
 - main hl (hashlife)
   ```
