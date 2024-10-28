@@ -82,6 +82,7 @@ def identify_pattern(board_cycle):
 
 def get_board_cycle_period(
         size = 2,
+        padding = False,
         rule = None,
         init_state = 7, # int (binary representation of matrix) or seed (random matrix) or 'squareN' where N is an int
         use_random_seed = False,
@@ -101,10 +102,14 @@ def get_board_cycle_period(
     '''
 
     if type(init_state) is int:
+        actual_size = size - 1 if padding else size
         if use_random_seed:
-            board = get_board_seed(seed=init_state, size=size)
+            board = get_board_seed(seed=init_state, size=actual_size)
         else:
-            board = get_board_int(n=init_state, size=size)
+            board = get_board_int(n=init_state, size=actual_size)
+        if padding:
+            # add extra padding to get back the board with correct size (actual_size + 1)
+            board = np.pad(board, 1)
 
         # init gol board and rule
         board, neighborhood, rule = init_gol_board_neighborhood_rule(
@@ -115,6 +120,8 @@ def get_board_cycle_period(
     else:
         assert init_state.startswith('square'), \
             'if `init_state` is not int it should be a string starting with "square" (e.g., "sqaure2", "square3", "square4")'
+        assert padding == False, \
+            'Padding makes no sense in square mode'
         board, neighborhood, rule = init_gol_board_neighborhood_rule(
             size = size,
             rule = rule,
@@ -174,6 +181,7 @@ def get_board_cycle_period(
 
 def run_cycles_analysis(
         size = 4,
+        padding = False, # use empty frame (1 cell top, bottom, left, right of board)
         rule = None,
         jump_to_generation = 100,
         sample_size = None,
@@ -190,7 +198,9 @@ def run_cycles_analysis(
     # cycle_counter = Counter()
     cycle_counter = defaultdict(list)
 
-    total_cells = size * size
+    actual_size = size-1 if padding else size
+
+    total_cells = actual_size * actual_size
 
     use_random_seed = sample_size is not None
 
@@ -206,6 +216,7 @@ def run_cycles_analysis(
     for init_state in tqdm(range(tot_states)):
         cycle, period = get_board_cycle_period(
             size = size,
+            padding = padding, # use empty frame (1 cell top, bottom, left, right of board)
             rule = rule,
             init_state = init_state,
             use_random_seed = use_random_seed,
@@ -240,6 +251,7 @@ def test_get_board(n=15):
 
 def generate_cycle_analysis(
         size = 2,
+        padding = False,  # use empty frame (1 cell top, bottom, left, right of board)
         rule = None,
         jump_to_generation = 100,
         sample_size = 10000, # used only on random_seed  (see use_random_seed)
@@ -254,6 +266,7 @@ def generate_cycle_analysis(
         # sample `sample_size` states for size > 4 [8,16,...]
         run_cycles_analysis(
             size = size,
+            padding = padding, # use empty frame (1 cell top, bottom, left, right of board)
             rule = rule,
             jump_to_generation = jump_to_generation,
             sample_size = sample_size,
@@ -263,6 +276,7 @@ def generate_cycle_analysis(
         # exaustive analyses for size in [2,4]
         run_cycles_analysis(
             size = size,
+            padding = padding, # use empty frame (1 cell top, bottom, left, right of board)
             rule = rule,
             jump_to_generation = jump_to_generation,
             torch_device = torch_device
@@ -297,12 +311,14 @@ def identify_patterns(
 
 def visualize_cycle(
         size = 8,
+        padding = False,  # use empty frame (1 cell top, bottom, left, right of board)
         rule = None,
         init_state = 27,
         torch_device = None
     ):
     get_board_cycle_period(
         size = size,
+        padding = padding,
         rule = rule,
         init_state = init_state,
         use_random_seed = size not in [2,4],
@@ -316,7 +332,8 @@ if __name__ == "__main__":
     '''test a random board'''
     # test_get_board(size)
 
-    size = 8
+    size = 4
+    padding = True # use empty frame (1 cell top, bottom, left, right of board)
 
     rule = None # default is GoL [[2, 3],[3]]
     # rule = [[2, 3],[3, 6]] # HighLife
@@ -328,20 +345,23 @@ if __name__ == "__main__":
     Get compact analysis of periods cycles for given size
     (See printout below for size 2, 4, 8)
     '''
-    # generate_cycle_analysis(
-    #     size = size,
-    #     rule = rule,
-    #     torch_device = torch_device
-    # )
-
-    '''visualize cycle animation for specific size and init state'''
-    visualize_cycle(
+    generate_cycle_analysis(
         size = size,
+        padding = padding,
         rule = rule,
-        init_state = 2833, # size must be 8 for init_state = 2833
-        # init_state = 'square2', # try with size=16
         torch_device = torch_device
     )
+
+    '''visualize cycle animation for specific size and init state'''
+    # visualize_cycle(
+    #     size = size,
+    #     padding = padding,
+    #     rule = rule,
+    #     init_state = 482, # size must be 4 for init_state = 103 with padding = True
+    #     # init_state = 2833, # size must be 8 for init_state = 2833
+    #     # init_state = 'square2', # try with size=16
+    #     torch_device = torch_device
+    # )
 
     '''identify interesting patterns starting with board of given size'''
     # identify_patterns(
