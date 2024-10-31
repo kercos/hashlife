@@ -133,6 +133,16 @@ class Automata:
             result = result.astype(int)
         return result
 
+    def set_board(self, board):
+        self.__init__(
+            board,
+            neighborhood=self.neighborhood,
+            rule=self.rule,
+            torus=self.torus,
+            use_fft=self.use_fft,
+            use_poly_update=self.use_poly_update,
+            torch_device=self.torch_device
+        )
 
 
     def get_board_pts(self, only_alive=True):
