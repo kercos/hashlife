@@ -43,6 +43,10 @@ def to_rle(pts, fixed_size=None):
         rle: the RLE string,
         width, height: bounds of the pattern """
 
+    if len(pts)==0:
+        # empty pattern
+        return '<empty>', (0, 0)
+
     # sort by x, then y
     pts.sort(key=lambda p: p[0])
     max_x = pts[-1][0]
