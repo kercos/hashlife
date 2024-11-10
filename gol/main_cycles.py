@@ -217,7 +217,7 @@ def get_board_cycle_period(
                     print('Min alive cells:', get_min_on_cells(board_cycle))
 
                     if save_to_file_if_new:
-                        pattern_filepath = f'output/cycles/size{size}_seed{init_state}'
+                        pattern_filepath = f'output/cycles/size_{size}_seed_{init_state}_p{cycle_period}'
                         print('Saving pattern to', pattern_filepath)
                     else:
                         pattern_filepath = None
