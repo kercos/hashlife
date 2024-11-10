@@ -101,15 +101,17 @@ def identify_pattern(board_cycle, check_lifelex=True, check_catagolue=True, log=
         soup = BeautifulSoup(result.content, features="html.parser")
         if result.status_code == 200:
             # title = soup.title.string
-            name = soup.h2.text
-            a_tag = soup.h2.a
-            if a_tag:
-                href = a_tag.get('href')
-                if href:
-                    name += f' ({a_tag['href']})'
-            # if log:
-            print(name)
-            return name
+            h2 = soup.h2
+            if h2:
+                name = h2.text
+                a_tag = soup.h2.a
+                if a_tag:
+                    href = a_tag.get('href')
+                    if href:
+                        name += f' ({a_tag['href']})'
+                if log:
+                    print(name)
+                return name
     return None
 
 def get_board_cycle_period(
@@ -123,6 +125,7 @@ def get_board_cycle_period(
         use_fft = False,
         torch_device = None,
         min_cycle_period_to_report = 0,
+        max_cycle_period_to_report = None,
         print_all_patterns = False,
         identify = False,
         force_animation = False,
@@ -135,6 +138,8 @@ def get_board_cycle_period(
 
     if min_cycle_period_to_report is None:
         min_cycle_period_to_report = 0
+    if max_cycle_period_to_report is None:
+        max_cycle_period_to_report = np.iinfo(np.int32).max
 
     if type(init_state) is int:
         actual_size = size - 2 if padding else size
@@ -188,34 +193,41 @@ def get_board_cycle_period(
 
                 cycle_period = len(board_cycle)
 
+                if force_animation:
+                    automata.animate(interval=500)
+
+                if (
+                    cycle_period < min_cycle_period_to_report or
+                    cycle_period > max_cycle_period_to_report
+                ):
+                    # discard pattern if not long enough or too long
+                    return board_cycle, cycle_period
+
                 # identify pattern (False if identify is False)
                 pattern_name = identify and identify_pattern(board_cycle)
                 is_new_pattern = not pattern_name
 
-                # discard pattern if not long enough
-                if force_animation:
-                    automata.animate(interval=500)
-                elif cycle_period >= min_cycle_period_to_report:
-                    if is_new_pattern:
-                        print('^^^^^^^^^^^^^^^^^^^^^^^^^^^')
-                        print('FOUND NEW PATTERN CYCLE!')
-                        print('Init state:', init_state)
-                        print('Cycle period:', cycle_period)
-                        print('Min alive cells:', get_min_on_cells(board_cycle))
+                # report on new pattern
+                if is_new_pattern:
+                    print('^^^^^^^^^^^^^^^^^^^^^^^^^^^')
+                    print('FOUND NEW PATTERN CYCLE!')
+                    print('Init state:', init_state)
+                    print('Cycle period:', cycle_period)
+                    print('Min alive cells:', get_min_on_cells(board_cycle))
 
-                        if save_to_file_if_new:
-                            pattern_filepath = f'output/cycles/size{size}_seed{init_state}.LIFS'
-                        else:
-                            pattern_filepath = None
+                    if save_to_file_if_new:
+                        pattern_filepath = f'output/cycles/size{size}_seed{init_state}.LIFS'
+                    else:
+                        pattern_filepath = None
 
-                        # print patterns
-                        print_patterns(
-                            board_cycle,
-                            all = print_all_patterns,
-                            pattern_filepath = pattern_filepath
-                        )
-                        if animate_if_new:
-                            automata.animate(interval=500)
+                    # print patterns
+                    print_patterns(
+                        board_cycle,
+                        all = print_all_patterns,
+                        pattern_filepath = pattern_filepath
+                    )
+                    if not force_animation and animate_if_new:
+                        automata.animate(interval=500)
 
                 return board_cycle, cycle_period
         else:
@@ -265,6 +277,7 @@ def run_cycles_analysis(
             jump_to_generation = jump_to_generation,
             torus = torus,
             min_cycle_period_to_report = None,
+            max_cycle_period_to_report = None,
             identify = False,
             animate_if_new = False,
             save_to_file_if_new = False,
@@ -329,6 +342,7 @@ def identify_new_patterns(
         size = 8,
         rule = None,
         min_cycle_period_to_report=132,
+        max_cycle_period_to_report = None,
         iters = 1000,
         torch_device = None
     ):
@@ -348,6 +362,7 @@ def identify_new_patterns(
             torch_device = torch_device,
             identify = True,
             min_cycle_period_to_report = min_cycle_period_to_report,
+            max_cycle_period_to_report = max_cycle_period_to_report,
             animate_if_new = True,
             save_to_file_if_new = True
         )
@@ -385,7 +400,7 @@ if __name__ == "__main__":
     '''test a random board'''
     # test_get_board(size)
 
-    size = 8
+    size = 32
     padding = False # use empty frame (1 cell top, bottom, left, right of board)
 
     rule = None # default is GoL [[2, 3],[3]]
@@ -410,7 +425,7 @@ if __name__ == "__main__":
     #     size = size,
     #     padding = padding,
     #     rule = rule,
-    #     init_state = 1305453972, # try something
+    #     init_state = 1701538987, # try something
     #     # init_state = 198, # size must be 16 for init_state = 64 with padding = True
     #     # init_state = 2833, # size must be 8 for init_state = 2833
     #     # init_state = 'square2', # try with size=16
@@ -422,8 +437,9 @@ if __name__ == "__main__":
     identify_new_patterns(
         size = size,
         rule = rule,
-        min_cycle_period_to_report = 3,
-        iters = 100,
+        min_cycle_period_to_report = 16,
+        max_cycle_period_to_report = 64,
+        iters = 1000,
         torch_device = torch_device
     )
 
