@@ -222,13 +222,42 @@ def numpy_to_life_106(board_np, filepath):
 '''
 Convert board to RLE
 '''
-def numpy_to_rle(board_np, filepath=None):
+def numpy_to_rle(board_np, torus=True, filepath=None):
     # see http://www.mirekw.com/ca/ca_files_formats.html
     from gol.hl.lifeparsers import write_rle
 
     pts = get_board_pts(board_np, only_alive=True)
     size = board_np.shape[0]
-    return write_rle(fixed_size=size, filepath=filepath, pts=pts)
+    return write_rle(
+        fixed_size=size,
+        filepath=filepath,
+        pts=pts,
+        torus=torus
+    )
+
+def export_board_cycle_to_gif(board_cycle, filepath, targetsize = (500, 500)):
+    # print(board_cycle)
+    from PIL import Image
+
+    imgs = np.random.randint(0, 255, (100, 50, 50, 3), dtype=np.uint8)
+    imgs = []
+    for b in board_cycle:
+        board_np = b.astype(np.uint8) * 255
+        img = Image.fromarray(board_np, mode='L')
+        if targetsize:
+            img = img.resize(
+                targetsize,
+                Image.NEAREST
+            )
+        imgs.append(img)
+    # duration is the number of milliseconds between frames; this is 40 frames per second
+    imgs[0].save(
+        filepath,
+        save_all=True,
+        append_images=imgs[1:],
+        duration=200,
+        loop=0
+    )
 
 
 if __name__ == "__main__":

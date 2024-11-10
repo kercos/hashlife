@@ -3,8 +3,11 @@ import numpy as np
 from tqdm import tqdm
 from gol.main_pure import init_gol_board_neighborhood_rule
 from gol.main_pure import Automata
-from gol.utils import numpy_to_stars, numpy_to_rle
+from gol.utils import numpy_to_stars, numpy_to_rle, export_board_cycle_to_gif
 from gol.process_lexicon import get_lex_patterns
+import requests
+from bs4 import BeautifulSoup
+
 
 NAME_PATTERN = get_lex_patterns()
 PATTERN_NAME = {p:n for n,p in NAME_PATTERN.items()}
@@ -69,16 +72,43 @@ def print_patterns(board_cycle, all=False, pattern_filepath=None):
             fout.write(pattern_str)
     return pattern_str
 
-def identify_pattern(board_cycle):
+def identify_pattern(board_cycle, check_lifelex=True, check_catagolue=True, log=False):
     '''
     Try to identify patterns from live lexicon
     #TODO: update this to take into consideration https://conwaylife.com/wiki
     '''
-    for b in board_cycle:
-        pattern_str = '\n'.join(numpy_to_stars(b, crop=True))
-        if pattern_str in PATTERN_NAME:
-            name = PATTERN_NAME[pattern_str]
-            print('FOUND PATTERN:', name)
+    if check_lifelex:
+        # check on life lexicon (files)
+        for b in board_cycle:
+            pattern_str = '\n'.join(numpy_to_stars(b, crop=True))
+            if pattern_str in PATTERN_NAME:
+                name = PATTERN_NAME[pattern_str]
+                if log:
+                    print('FOUND PATTERN:', name)
+                return name
+    if check_catagolue:
+        first_board = board_cycle[0]
+        if np.count_nonzero(first_board) == 0:
+            return '<empty>'
+        # do not write T:info (error)
+        pattern_rle_lines = numpy_to_rle(first_board, torus=False)
+        pattern_rle_str = '\n'.join(pattern_rle_lines)
+        # check on catagolue
+        result = requests.post(
+            'https://catagolue.hatsya.com/identify',
+            data={'content': pattern_rle_str}
+        )
+        soup = BeautifulSoup(result.content, features="html.parser")
+        if result.status_code == 200:
+            # title = soup.title.string
+            name = soup.h2.text
+            a_tag = soup.h2.a
+            if a_tag:
+                href = a_tag.get('href')
+                if href:
+                    name += f' ({a_tag['href']})'
+            # if log:
+            print(name)
             return name
     return None
 
@@ -102,6 +132,9 @@ def get_board_cycle_period(
     '''
     Analyze period of given board
     '''
+
+    if min_cycle_period_to_report is None:
+        min_cycle_period_to_report = 0
 
     if type(init_state) is int:
         actual_size = size - 2 if padding else size
@@ -153,17 +186,23 @@ def get_board_cycle_period(
                 if i>0:
                     board_cycle = board_cycle[i:]
 
+                cycle_period = len(board_cycle)
+
                 # identify pattern (False if identify is False)
                 pattern_name = identify and identify_pattern(board_cycle)
+                is_new_pattern = not pattern_name
 
-                if force_animation or (animate_if_new and pattern_name):
-                    cycle_period = len(board_cycle)
-                    print('^^^^^^^^^^^^^^^^^^^^^^^^^^^')
-                    print('FOUND NEW PATTERN CYCLE!')
-                    print('Cycle period:', cycle_period)
-                    print('Min alive cells:', get_min_on_cells(board_cycle))
+                # discard pattern if not long enough
+                if force_animation:
+                    automata.animate(interval=500)
+                elif cycle_period >= min_cycle_period_to_report:
+                    if is_new_pattern:
+                        print('^^^^^^^^^^^^^^^^^^^^^^^^^^^')
+                        print('FOUND NEW PATTERN CYCLE!')
+                        print('Init state:', init_state)
+                        print('Cycle period:', cycle_period)
+                        print('Min alive cells:', get_min_on_cells(board_cycle))
 
-                    if min_cycle_period_to_report is not None and cycle_period >= min_cycle_period_to_report:
                         if save_to_file_if_new:
                             pattern_filepath = f'output/cycles/size{size}_seed{init_state}.LIFS'
                         else:
@@ -175,9 +214,10 @@ def get_board_cycle_period(
                             all = print_all_patterns,
                             pattern_filepath = pattern_filepath
                         )
+                        if animate_if_new:
+                            automata.animate(interval=500)
 
-                        automata.animate(interval=500)
-                return board_cycle, len(board_cycle)
+                return board_cycle, cycle_period
         else:
             board_cycle.append(next_board)
 
@@ -285,7 +325,7 @@ def generate_cycle_analysis(
             torch_device = torch_device
         )
 
-def identify_patterns(
+def identify_new_patterns(
         size = 8,
         rule = None,
         min_cycle_period_to_report=132,
@@ -317,19 +357,28 @@ def visualize_cycle(
         padding = False,  # use empty frame (1 cell top, bottom, left, right of board)
         rule = None,
         init_state = 27,
+        exportgif = True,
+        animate = True,
         torch_device = None
     ):
-    get_board_cycle_period(
+
+    board_cycle, len_board_cycle = get_board_cycle_period(
         size = size,
         padding = padding,
         rule = rule,
         init_state = init_state,
         use_random_seed = size not in [2,4],
         identify = True,
-        force_animation = True,
+        force_animation = animate,
         print_all_patterns = False,
         torch_device = torch_device
     )
+
+    if exportgif:
+        filepath = f'output/gif/size_{size}_state{init_state}_len{len_board_cycle}.gif'
+        export_board_cycle_to_gif(board_cycle, filepath)
+
+
 
 if __name__ == "__main__":
 
@@ -337,7 +386,7 @@ if __name__ == "__main__":
     # test_get_board(size)
 
     size = 8
-    padding = True # use empty frame (1 cell top, bottom, left, right of board)
+    padding = False # use empty frame (1 cell top, bottom, left, right of board)
 
     rule = None # default is GoL [[2, 3],[3]]
     # rule = [[2, 3],[3, 6]] # HighLife
@@ -349,33 +398,34 @@ if __name__ == "__main__":
     Get compact analysis of periods cycles for given size
     (See printout below for size 2, 4, 8)
     '''
-    generate_cycle_analysis(
-        size = size,
-        padding = padding,
-        rule = rule,
-        torch_device = torch_device
-    )
+    # generate_cycle_analysis(
+    #     size = size,
+    #     padding = padding,
+    #     rule = rule,
+    #     torch_device = torch_device
+    # )
 
     '''visualize cycle animation for specific size and init state'''
     # visualize_cycle(
     #     size = size,
     #     padding = padding,
     #     rule = rule,
+    #     init_state = 1305453972, # try something
     #     # init_state = 198, # size must be 16 for init_state = 64 with padding = True
-    #     init_state = 257, # size must be 8 for init_state = 257 with padding = True
     #     # init_state = 2833, # size must be 8 for init_state = 2833
     #     # init_state = 'square2', # try with size=16
+    #     exportgif = True,
     #     torch_device = torch_device
     # )
 
     '''identify interesting patterns starting with board of given size'''
-    # identify_patterns(
-    #     size = size,
-    #     rule = rule,
-    #     min_cycle_period_to_report = 3,
-    #     iters = 100,
-    #     torch_device = torch_device
-    # )
+    identify_new_patterns(
+        size = size,
+        rule = rule,
+        min_cycle_period_to_report = 3,
+        iters = 100,
+        torch_device = torch_device
+    )
 
     '''
     *Life*
