@@ -130,6 +130,7 @@ def get_board_cycle_period(
         identify = False,
         force_animation = False,
         animate_if_new = False,
+        export_gif_if_new = False,
         save_to_file_if_new = False
     ):
     '''
@@ -216,7 +217,8 @@ def get_board_cycle_period(
                     print('Min alive cells:', get_min_on_cells(board_cycle))
 
                     if save_to_file_if_new:
-                        pattern_filepath = f'output/cycles/size{size}_seed{init_state}.LIFS'
+                        pattern_filepath = f'output/cycles/size{size}_seed{init_state}'
+                        print('Saving pattern to', pattern_filepath)
                     else:
                         pattern_filepath = None
 
@@ -224,10 +226,15 @@ def get_board_cycle_period(
                     print_patterns(
                         board_cycle,
                         all = print_all_patterns,
-                        pattern_filepath = pattern_filepath
+                        pattern_filepath = pattern_filepath + '.LIFS'
                     )
                     if not force_animation and animate_if_new:
                         automata.animate(interval=500)
+                    if export_gif_if_new:
+                        export_board_cycle_to_gif(
+                            board_cycle,
+                            filepath = pattern_filepath + '.gif'
+                        )
 
                 return board_cycle, cycle_period
         else:
@@ -280,7 +287,8 @@ def run_cycles_analysis(
             max_cycle_period_to_report = None,
             identify = False,
             animate_if_new = False,
-            save_to_file_if_new = False,
+            export_gif_if_new = True,
+            save_to_file_if_new = True,
             use_fft = use_fft,
             torch_device = torch_device,
         )
@@ -344,6 +352,7 @@ def identify_new_patterns(
         min_cycle_period_to_report=132,
         max_cycle_period_to_report = None,
         iters = 1000,
+        animate_if_new = False,
         torch_device = None
     ):
 
@@ -363,8 +372,9 @@ def identify_new_patterns(
             identify = True,
             min_cycle_period_to_report = min_cycle_period_to_report,
             max_cycle_period_to_report = max_cycle_period_to_report,
-            animate_if_new = True,
-            save_to_file_if_new = True
+            animate_if_new = animate_if_new,
+            save_to_file_if_new = True,
+            export_gif_if_new = True
         )
 
 def visualize_cycle(
@@ -372,7 +382,7 @@ def visualize_cycle(
         padding = False,  # use empty frame (1 cell top, bottom, left, right of board)
         rule = None,
         init_state = 27,
-        exportgif = True,
+        export_gif = True,
         animate = True,
         torch_device = None
     ):
@@ -389,7 +399,7 @@ def visualize_cycle(
         torch_device = torch_device
     )
 
-    if exportgif:
+    if export_gif:
         filepath = f'output/gif/size_{size}_state{init_state}_len{len_board_cycle}.gif'
         export_board_cycle_to_gif(board_cycle, filepath)
 
@@ -425,11 +435,11 @@ if __name__ == "__main__":
     #     size = size,
     #     padding = padding,
     #     rule = rule,
-    #     init_state = 1701538987, # try something
+    #     init_state = 18408135, # try something
     #     # init_state = 198, # size must be 16 for init_state = 64 with padding = True
     #     # init_state = 2833, # size must be 8 for init_state = 2833
     #     # init_state = 'square2', # try with size=16
-    #     exportgif = True,
+    #     export_gif = False,
     #     torch_device = torch_device
     # )
 
@@ -438,8 +448,9 @@ if __name__ == "__main__":
         size = size,
         rule = rule,
         min_cycle_period_to_report = 16,
-        max_cycle_period_to_report = 64,
+        max_cycle_period_to_report = 96,
         iters = 1000,
+        animate_if_new = False,
         torch_device = torch_device
     )
 
