@@ -135,6 +135,7 @@ def get_board_cycle_period(
         analyze = False, # all following args only needed if this is True
         min_cycle_period_to_report = 0,
         max_cycle_period_to_report = None,
+        exclude_cycles_period = None,
         check_identity = False,
         force_output = False,
         animate_if_new = False,
@@ -206,7 +207,11 @@ def get_board_cycle_period(
 
                     period_check = (
                         period >= min_cycle_period_to_report and
-                        period <= max_cycle_period_to_report
+                        period <= max_cycle_period_to_report and
+                        (
+                            exclude_cycles_period is None or
+                            period not in exclude_cycles_period
+                        )
                     )
 
                     # identify pattern (False if identify is False)
@@ -356,6 +361,7 @@ def identify_new_patterns(
         check_identity = True,
         min_cycle_period_to_report=132,
         max_cycle_period_to_report = None,
+        exclude_cycles_period = None,
         iters = 1000,
         animate_if_new = False,
         torch_device = None
@@ -379,6 +385,7 @@ def identify_new_patterns(
             check_identity = check_identity,
             min_cycle_period_to_report = min_cycle_period_to_report,
             max_cycle_period_to_report = max_cycle_period_to_report,
+            exclude_cycles_period = exclude_cycles_period,
             animate_if_new = animate_if_new,
             save_to_file_if_new = True,
             export_gif_if_new = True
@@ -462,9 +469,10 @@ if __name__ == "__main__":
         rule = rule,
         padding = padding,
         check_identity = False,
-        min_cycle_period_to_report = 7,
-        max_cycle_period_to_report = 30,
-        iters = 1000,
+        min_cycle_period_to_report = 33,
+        max_cycle_period_to_report = None,
+        exclude_cycles_period = [64],
+        iters = 1000000000,
         animate_if_new = False,
         torch_device = torch_device
     )
