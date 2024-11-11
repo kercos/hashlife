@@ -26,6 +26,10 @@ Explore emerging patterns in GoL, something along [these lines](https://softolog
   ```
   python -m gol.main_cycles
   ```
+- main patterns (interesting patterns from cycles)
+  ```
+  python -m gol.main_patterns
+  ```
 - main hl (hashlife)
   ```
   python -m gol.main_hl
