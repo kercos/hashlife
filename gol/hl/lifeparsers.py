@@ -127,7 +127,7 @@ def to_rle(pts, fixed_size=None):
     return rle_str, (size_x, size_y)
 
 
-def write_rle(filepath, pts, fixed_size=None, torus=True, rule='B3/S23', comments=[]):
+def write_rle(filepath, pts, fixed_size=None, torus=True, rule='B3/S23', textwraplinechars=None, comments=[]):
     """Write a point list to a file, with an optional comment block"""
     rle, (x, y) = to_rle(pts, fixed_size=fixed_size)
 
@@ -143,8 +143,10 @@ def write_rle(filepath, pts, fixed_size=None, torus=True, rule='B3/S23', comment
     for comment in comments:
         lines.append(f"#C {comment}\n")
 
-    # rle, 70 char max width
-    rle = textwrap.fill(rle, 70)
+    if textwraplinechars is not None:
+        # rle, char max width (e.g., 70)
+        rle = textwrap.fill(rle, textwraplinechars)
+
     lines.append(rle)
 
     # write to file

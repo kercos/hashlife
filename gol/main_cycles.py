@@ -44,33 +44,28 @@ def get_min_on_cells(board_cycle):
 
 def print_patterns(board_cycle, all=False, pattern_filepath=None):
     '''
-    Print min size (default) or all star pattern(s) in board_cycle (list of boards)
-    If pattern_filepath is provided save the min size pattern
+    Print all or first RLE pattern(s) in board_cycle (list of boards)
+    If pattern_filepath is provided save the first pattern as RLE
     '''
     if all:
         for c,b in enumerate(board_cycle, start=1):
-            pattern_str = '\n'.join(numpy_to_stars(b, crop=True))
+            pattern_rle = '\n'.join(numpy_to_rle(b, crop=True))
             print(f'-{c}-')
-            print(pattern_str)
+            print(pattern_rle)
             print()
 
-    all_pattern_str = []
-    for c,b in enumerate(board_cycle, start=1):
-        pattern_str = '\n'.join(numpy_to_stars(b, crop=True))
-        all_pattern_str.append(pattern_str)
-    len_pattern_str = [(len(p),p) for p in all_pattern_str]
-    min_len_pattern_str = sorted(len_pattern_str, key=lambda lp: lp[0])[0] # get smallest
-    pattern_str = min_len_pattern_str[1] # get pattern from pair
+    first_board = board_cycle[0]
+    rle_str = ''.join(numpy_to_rle(first_board))
+
     if not all:
-        print(f'---')
-        print(pattern_str)
         print(f'---RLE___')
-        rle_str = ''.join(numpy_to_rle(b))
         print(rle_str)
+
     if pattern_filepath is not None:
         with open(pattern_filepath, 'w') as fout:
-            fout.write(pattern_str)
-    return pattern_str
+            fout.write(rle_str)
+
+    return rle_str
 
 def identify_pattern(board_cycle, check_lifelex=True, check_catagolue=True, log=False):
     '''
@@ -114,6 +109,19 @@ def identify_pattern(board_cycle, check_lifelex=True, check_catagolue=True, log=
                 return name
     return None
 
+def print_info_pattern_cycle(init_state, cycle_period, board_cycle, pattern_filepath_rle, print_all_patterns=False):
+    print('^^^^^^^^^^^^^^^^^^^^^^^^^^^')
+    print('FOUND NEW PATTERN CYCLE!')
+    print('Init state:', init_state)
+    print('Cycle period:', cycle_period)
+    print('Min alive cells:', get_min_on_cells(board_cycle))
+
+    print_patterns(
+        board_cycle,
+        all = print_all_patterns,
+        pattern_filepath = pattern_filepath_rle
+    )
+
 def get_board_cycle_period(
         size = 2,
         padding = False,
@@ -128,7 +136,7 @@ def get_board_cycle_period(
         max_cycle_period_to_report = None,
         print_all_patterns = False,
         identify = False,
-        force_animation = False,
+        force_output = False,
         animate_if_new = False,
         export_gif_if_new = False,
         save_to_file_if_new = False
@@ -194,47 +202,44 @@ def get_board_cycle_period(
 
                 cycle_period = len(board_cycle)
 
-                if force_animation:
-                    automata.animate(interval=500)
-
-                if (
+                period_check = (
                     cycle_period < min_cycle_period_to_report or
                     cycle_period > max_cycle_period_to_report
-                ):
-                    # discard pattern if not long enough or too long
-                    return board_cycle, cycle_period
+                )
 
                 # identify pattern (False if identify is False)
                 pattern_name = identify and identify_pattern(board_cycle)
                 is_new_pattern = not pattern_name
+                is_new_and_period_ok = period_check and is_new_pattern
 
                 # report on new pattern
-                if is_new_pattern:
-                    print('^^^^^^^^^^^^^^^^^^^^^^^^^^^')
-                    print('FOUND NEW PATTERN CYCLE!')
-                    print('Init state:', init_state)
-                    print('Cycle period:', cycle_period)
-                    print('Min alive cells:', get_min_on_cells(board_cycle))
-
-                    if save_to_file_if_new:
+                if force_output or is_new_and_period_ok:
+                    if force_output or save_to_file_if_new:
                         pattern_filepath = f'output/cycles/size_{size}_seed_{init_state}_p{cycle_period}'
-                        print('Saving pattern to', pattern_filepath)
+                        pattern_filepath_rle = pattern_filepath + '.rle'
+                        pattern_filepath_gif = pattern_filepath + '.gif'
                     else:
                         pattern_filepath = None
+                        pattern_filepath_rle = None
+                        pattern_filepath_gif = None
 
-                    # print patterns
-                    print_patterns(
+                    # print pattern
+                    print_info_pattern_cycle(
+                        init_state,
+                        cycle_period,
                         board_cycle,
-                        all = print_all_patterns,
-                        pattern_filepath = pattern_filepath + '.LIFS'
+                        pattern_filepath_rle
                     )
-                    if not force_animation and animate_if_new:
-                        automata.animate(interval=500)
-                    if export_gif_if_new:
+
+                    if force_output or export_gif_if_new:
                         export_board_cycle_to_gif(
                             board_cycle,
-                            filepath = pattern_filepath + '.gif'
+                            filepath = pattern_filepath_gif
                         )
+                        print('Saving gif to', pattern_filepath_gif)
+
+                    if force_output or animate_if_new:
+                        automata.animate(interval=500)
 
                 return board_cycle, cycle_period
         else:
@@ -382,7 +387,7 @@ def visualize_cycle(
         padding = False,  # use empty frame (1 cell top, bottom, left, right of board)
         rule = None,
         init_state = 27,
-        export_gif = True,
+        export_gif = False,
         animate = True,
         torch_device = None
     ):
@@ -394,7 +399,7 @@ def visualize_cycle(
         init_state = init_state,
         use_random_seed = size not in [2,4],
         identify = True,
-        force_animation = animate,
+        force_output = animate,
         print_all_patterns = False,
         torch_device = torch_device
     )
@@ -410,7 +415,7 @@ if __name__ == "__main__":
     '''test a random board'''
     # test_get_board(size)
 
-    size = 32
+    size = 16
     padding = False # use empty frame (1 cell top, bottom, left, right of board)
 
     rule = None # default is GoL [[2, 3],[3]]
@@ -435,7 +440,7 @@ if __name__ == "__main__":
     #     size = size,
     #     padding = padding,
     #     rule = rule,
-    #     init_state = 18408135, # try something
+    #     init_state = 1840561505, # try something
     #     # init_state = 198, # size must be 16 for init_state = 64 with padding = True
     #     # init_state = 2833, # size must be 8 for init_state = 2833
     #     # init_state = 'square2', # try with size=16
@@ -447,9 +452,9 @@ if __name__ == "__main__":
     identify_new_patterns(
         size = size,
         rule = rule,
-        min_cycle_period_to_report = 16,
-        max_cycle_period_to_report = 96,
-        iters = 1000,
+        min_cycle_period_to_report = 3,
+        max_cycle_period_to_report = 16,
+        iters = 100000,
         animate_if_new = False,
         torch_device = torch_device
     )
