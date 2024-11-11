@@ -124,7 +124,7 @@ def print_info_pattern_cycle(init_state, cycle_period, board_cycle, pattern_file
 
 def get_board_cycle_period(
         size = 2,
-        padding = False,
+        padding = None,
         rule = None,
         init_state = 7, # int (binary representation of matrix) or seed (random matrix) or 'squareN' where N is an int
         use_random_seed = False,
@@ -132,10 +132,10 @@ def get_board_cycle_period(
         torus=True,
         use_fft = False,
         torch_device = None,
+        analyze = False, # all following args only needed if this is True
         min_cycle_period_to_report = 0,
         max_cycle_period_to_report = None,
-        print_all_patterns = False,
-        identify = False,
+        check_identity = False,
         force_output = False,
         animate_if_new = False,
         export_gif_if_new = False,
@@ -151,14 +151,14 @@ def get_board_cycle_period(
         max_cycle_period_to_report = np.iinfo(np.int32).max
 
     if type(init_state) is int:
-        actual_size = size - 2 if padding else size
+        actual_size = size - 2 * padding if padding else size
         if use_random_seed:
             board = get_board_seed(seed=init_state, size=actual_size)
         else:
             board = get_board_int(n=init_state, size=actual_size)
         if padding:
             # add extra padding to get back the board with correct size (actual_size + 2)
-            board = np.pad(board, 1)
+            board = np.pad(board, padding)
 
         # init gol board and rule
         board, neighborhood, rule = init_gol_board_neighborhood_rule(
@@ -169,7 +169,7 @@ def get_board_cycle_period(
     else:
         assert init_state.startswith('square'), \
             'if `init_state` is not int it should be a string starting with "square" (e.g., "sqaure2", "square3", "square4")'
-        assert padding == False, \
+        assert not padding, \
             'Padding makes no sense in square mode'
         board, neighborhood, rule = init_gol_board_neighborhood_rule(
             size = size,
@@ -200,54 +200,57 @@ def get_board_cycle_period(
                 if i>0:
                     board_cycle = board_cycle[i:]
 
-                cycle_period = len(board_cycle)
+                period = len(board_cycle)
 
-                period_check = (
-                    cycle_period < min_cycle_period_to_report or
-                    cycle_period > max_cycle_period_to_report
-                )
+                if analyze:
 
-                # identify pattern (False if identify is False)
-                pattern_name = identify and identify_pattern(board_cycle)
-                is_new_pattern = not pattern_name
-                is_new_and_period_ok = period_check and is_new_pattern
-
-                # report on new pattern
-                if force_output or is_new_and_period_ok:
-                    if force_output or save_to_file_if_new:
-                        pattern_filepath = f'output/cycles/size_{size}_seed_{init_state}_p{cycle_period}'
-                        pattern_filepath_rle = pattern_filepath + '.rle'
-                        pattern_filepath_gif = pattern_filepath + '.gif'
-                    else:
-                        pattern_filepath = None
-                        pattern_filepath_rle = None
-                        pattern_filepath_gif = None
-
-                    # print pattern
-                    print_info_pattern_cycle(
-                        init_state,
-                        cycle_period,
-                        board_cycle,
-                        pattern_filepath_rle
+                    period_check = (
+                        period >= min_cycle_period_to_report and
+                        period <= max_cycle_period_to_report
                     )
 
-                    if force_output or export_gif_if_new:
-                        export_board_cycle_to_gif(
+                    # identify pattern (False if identify is False)
+                    pattern_name = check_identity and identify_pattern(board_cycle)
+                    is_new_pattern = not pattern_name
+                    is_new_and_period_ok = period_check and is_new_pattern
+
+                    # report on new pattern
+                    if force_output or is_new_and_period_ok:
+                        if force_output or save_to_file_if_new:
+                            filebase = filename_base(size, padding, init_state, period)
+                            pattern_filepath = f'output/cycles/{filebase}'
+                            pattern_filepath_rle = pattern_filepath + '.rle'
+                            pattern_filepath_gif = pattern_filepath + '.gif'
+                        else:
+                            pattern_filepath = None
+                            pattern_filepath_rle = None
+                            pattern_filepath_gif = None
+
+                        # print pattern
+                        print_info_pattern_cycle(
+                            init_state,
+                            period,
                             board_cycle,
-                            filepath = pattern_filepath_gif
+                            pattern_filepath_rle
                         )
-                        print('Saving gif to', pattern_filepath_gif)
 
-                    if force_output or animate_if_new:
-                        automata.animate(interval=500)
+                        if force_output or export_gif_if_new:
+                            export_board_cycle_to_gif(
+                                board_cycle,
+                                filepath = pattern_filepath_gif
+                            )
+                            print('Saving gif to', pattern_filepath_gif)
 
-                return board_cycle, cycle_period
+                        if force_output or animate_if_new:
+                            automata.animate(interval=500)
+
+                return board_cycle, period
         else:
             board_cycle.append(next_board)
 
-def run_cycles_analysis(
+def run_cycles_stats(
         size = 4,
-        padding = False, # use empty frame (1 cell top, bottom, left, right of board)
+        padding = None, # use empty frame (1 cell top, bottom, left, right of board)
         rule = None,
         jump_to_generation = 100,
         sample_size = None,
@@ -264,7 +267,7 @@ def run_cycles_analysis(
     # cycle_counter = Counter()
     cycle_counter = defaultdict(list)
 
-    actual_size = size - 2 if padding else size
+    actual_size = size - 2 * padding if padding else size
 
     total_cells = actual_size * actual_size
 
@@ -280,7 +283,7 @@ def run_cycles_analysis(
         tot_states = tot_configurations
 
     for init_state in tqdm(range(tot_states)):
-        cycle, period = get_board_cycle_period(
+        _, period = get_board_cycle_period(
             size = size,
             padding = padding, # use empty frame (1 cell top, bottom, left, right of board)
             rule = rule,
@@ -288,14 +291,9 @@ def run_cycles_analysis(
             use_random_seed = use_random_seed,
             jump_to_generation = jump_to_generation,
             torus = torus,
-            min_cycle_period_to_report = None,
-            max_cycle_period_to_report = None,
-            identify = False,
-            animate_if_new = False,
-            export_gif_if_new = True,
-            save_to_file_if_new = True,
             use_fft = use_fft,
             torch_device = torch_device,
+            analyze = False
         )
 
         cycle_counter[period].append(init_state)
@@ -333,7 +331,7 @@ def generate_cycle_analysis(
 
     if use_random_seed:
         # sample `sample_size` states for size > 4 [8,16,...]
-        run_cycles_analysis(
+        run_cycles_stats(
             size = size,
             padding = padding, # use empty frame (1 cell top, bottom, left, right of board)
             rule = rule,
@@ -343,7 +341,7 @@ def generate_cycle_analysis(
         )
     else:
         # exaustive analyses for size in [2,4]
-        run_cycles_analysis(
+        run_cycles_stats(
             size = size,
             padding = padding, # use empty frame (1 cell top, bottom, left, right of board)
             rule = rule,
@@ -354,6 +352,8 @@ def generate_cycle_analysis(
 def identify_new_patterns(
         size = 8,
         rule = None,
+        padding = None,
+        check_identity = True,
         min_cycle_period_to_report=132,
         max_cycle_period_to_report = None,
         iters = 1000,
@@ -368,19 +368,26 @@ def identify_new_patterns(
         cycle, period = get_board_cycle_period(
             size = size,
             rule = rule,
+            padding = padding,
             init_state = init_state,
             use_random_seed = True,
             jump_to_generation = 100,
             torus = True,
             use_fft = False,
             torch_device = torch_device,
-            identify = True,
+            analyze = True,
+            check_identity = check_identity,
             min_cycle_period_to_report = min_cycle_period_to_report,
             max_cycle_period_to_report = max_cycle_period_to_report,
             animate_if_new = animate_if_new,
             save_to_file_if_new = True,
             export_gif_if_new = True
         )
+
+def filename_base(size, padding, init_state, period):
+    if padding:
+        f'size{size}_pad{padding}_state{init_state}_p{period}'
+    return f'size{size}_state{init_state}_p{period}'
 
 def visualize_cycle(
         size = 8,
@@ -392,20 +399,21 @@ def visualize_cycle(
         torch_device = None
     ):
 
-    board_cycle, len_board_cycle = get_board_cycle_period(
+    board_cycle, period = get_board_cycle_period(
         size = size,
         padding = padding,
         rule = rule,
         init_state = init_state,
         use_random_seed = size not in [2,4],
-        identify = True,
+        check_identity = True,
+        torch_device = torch_device,
+        analyze = True,
         force_output = animate,
-        print_all_patterns = False,
-        torch_device = torch_device
     )
 
     if export_gif:
-        filepath = f'output/gif/size_{size}_state{init_state}_len{len_board_cycle}.gif'
+        filebase = filename_base(size, padding, init_state, period)
+        filepath = f'output/gif/{filebase}.gif'
         export_board_cycle_to_gif(board_cycle, filepath)
 
 
@@ -416,7 +424,7 @@ if __name__ == "__main__":
     # test_get_board(size)
 
     size = 16
-    padding = False # use empty frame (1 cell top, bottom, left, right of board)
+    padding = 0 # use empty frame (x cell top, bottom, left, right of board)
 
     rule = None # default is GoL [[2, 3],[3]]
     # rule = [[2, 3],[3, 6]] # HighLife
@@ -452,9 +460,11 @@ if __name__ == "__main__":
     identify_new_patterns(
         size = size,
         rule = rule,
-        min_cycle_period_to_report = 3,
-        max_cycle_period_to_report = 16,
-        iters = 100000,
+        padding = padding,
+        check_identity = False,
+        min_cycle_period_to_report = 7,
+        max_cycle_period_to_report = 30,
+        iters = 1000,
         animate_if_new = False,
         torch_device = torch_device
     )

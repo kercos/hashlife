@@ -13,6 +13,14 @@ def mold():
         init_state = 407304018,
     )
 
+def four_eyes():
+    visualize_cycle(
+        size = 16,
+        init_state = 1778200793,
+        padding = 3
+    )
+
 if __name__ == "__main__":
-    wave()
+    four_eyes()
+    # wave()
     # mold()
