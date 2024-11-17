@@ -238,6 +238,8 @@ def get_board_cycle_period(
                             board_cycle,
                             pattern_filepath_rle
                         )
+                        if pattern_name:
+                            print('Pattern identified:', pattern_name)
 
                         if force_output or export_gif_if_new:
                             export_board_cycle_to_gif(
@@ -332,7 +334,8 @@ def generate_cycle_analysis(
     '''
     Generate exaustive (or partial) analysis
     '''
-    use_random_seed = size not in [2,4]
+    actual_size = size - 2 * padding if padding else size
+    use_random_seed = actual_size not in [2,4]
 
     if use_random_seed:
         # sample `sample_size` states for size > 4 [8,16,...]
@@ -430,8 +433,8 @@ if __name__ == "__main__":
     '''test a random board'''
     # test_get_board(size)
 
-    size = 16
-    padding = 0 # use empty frame (x cell top, bottom, left, right of board)
+    size = 8
+    padding = 1 # use empty frame (x cell top, bottom, left, right of board)
 
     rule = None # default is GoL [[2, 3],[3]]
     # rule = [[2, 3],[3, 6]] # HighLife
@@ -447,6 +450,7 @@ if __name__ == "__main__":
     #     size = size,
     #     padding = padding,
     #     rule = rule,
+    #     sample_size = 1000,
     #     torch_device = torch_device
     # )
 
@@ -469,11 +473,11 @@ if __name__ == "__main__":
         rule = rule,
         padding = padding,
         check_identity = False,
-        min_cycle_period_to_report = 33,
-        max_cycle_period_to_report = None,
-        exclude_cycles_period = [64],
+        min_cycle_period_to_report = 9,
+        max_cycle_period_to_report = 9,
+        # exclude_cycles_period = [48],
         iters = 1000000000,
-        animate_if_new = False,
+        animate_if_new = True,
         torch_device = torch_device
     )
 
@@ -502,12 +506,17 @@ if __name__ == "__main__":
 
     '''
     *Life* with padding
-    size=16-pad (14x14=196) - sample: 10000 (100433627766186892221372630771322662657637687111424552206336 configurations)
+    size=16-pad6 (4x4=16) - exhaustive search (65536 configurations)
+        Period: 64, States (1160): [327, 339, 355, 378, '...', 65429, 65434, 65464, 65489]
+        Period: 3, States (112): [1999, 3647, 3902, 4039, '...', 64610, 64624, 65205, 65265]
+        Period: 2, States (16640): [7, 14, 31, 39, '...', 65527, 65528, 65530, 65534]
+        Period: 1, States (47624): [0, 1, 2, 3, '...', 65531, 65532, 65533, 65535]
+    size=16-pad1 (14x14=196) - sample: 10000 (100433627766186892221372630771322662657637687111424552206336 configurations)
         Period: 64, States (197): [64, 82, 140, 198, '...', 9800, 9886, 9930, 9956]
         Period: 3, States (12): [2617, 3116, 3592, 4717, '...', 6415, 7004, 9344, 9737]
         Period: 2, States (3764): [2, 3, 4, 6, '...', 9993, 9994, 9995, 9997]
         Period: 1, States (6027): [0, 1, 5, 7, '...', 9991, 9996, 9998, 9999]
-    size=8-pad (6x6=36) - sample: 10000 (68719476736 configurations)
+    size=8-pad1 (6x6=36) - sample: 10000 (68719476736 configurations)
         Period: 132, States (88): [51, 357, 582, 762, '...', 9822, 9839, 9862, 9981]
         Period: 48, States (221): [8, 60, 106, 202, '...', 9664, 9688, 9883, 9949]
         Period: 32, States (178): [36, 85, 111, 147, '...', 9799, 9823, 9840, 9942]
