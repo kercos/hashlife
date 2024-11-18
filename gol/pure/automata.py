@@ -134,16 +134,21 @@ class Automata:
         return result
 
     def set_board(self, board):
-        self.__init__(
-            board,
-            neighborhood=self.neighborhood,
-            rule=self.rule,
-            torus=self.torus,
-            use_fft=self.use_fft,
-            use_poly_update=self.use_poly_update,
-            torch_device=self.torch_device
-        )
+        if self.use_torch:
+            if self.use_fft:
+                self.board = torch.from_numpy(board).to(self.torch_device)
+            else:
+                self.board = torch.from_numpy(board).float().to(self.torch_device)
+        else:
+            self.board = board
 
+    def set_random_board(self):
+        if self.use_torch:
+            board = torch.rand(self.shape)
+            board = board < 0.5 # assume density 0.5
+        else:
+            board = np.random.uniform(0, 1, self.shape)
+            board = board < 0.5 # assume density 0.5
 
     def get_board_pts(self, only_alive=True):
         from gol.utils import get_board_pts
@@ -603,3 +608,24 @@ class Automata:
 
         if force_show:
             plt.show()
+
+    '''
+    Get the period of the cycle (for torus boards)
+    '''
+    def get_cycle_period(self, advance_gen=100, max_period=1000):
+        if advance_gen:
+            self.advance(advance_gen)
+        if self.use_torch:
+            first_board = self.board.detach().clone()
+            for p in range(1,max_period+1):
+                self.advance()
+                if torch.equal(first_board, self.board):
+                    return p
+            return None # no cycle found (up to max_period)
+        else:
+            first_board = self.board.copy()
+            for p in range(1,max_period+1):
+                self.advance()
+                if np.all(first_board==self.board):
+                    return p
+            return None # no cycle found (up to max_period)
